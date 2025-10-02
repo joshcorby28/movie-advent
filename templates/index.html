@@ -61,7 +61,6 @@
     <button type="submit">⚡ Generate</button>
     <a href="#" id="try-again" style="color:#17a2b8; text-decoration: none; font-size: 0.9em; margin-left:10px; display:none;">Try Again</a>
     <a href="#" id="save-list" style="color:#28a745; text-decoration: none; font-size: 0.9em; margin-left:10px; display:none;">Save List</a>
-    <button type="button" id="theme-toggle" style="position: absolute; top: 20px; right: 20px; background:#fff; color:#1b1b1b; border:none; padding:8px; border-radius:6px; cursor:pointer;">🌙</button>
 </form>
 
 
@@ -196,12 +195,6 @@ window.onclick = function(event) {
     }
 }
 
-// Theme toggle
-const themeToggle = document.getElementById('theme-toggle');
-themeToggle.addEventListener('click', function() {
-    document.body.classList.toggle('light-mode');
-    this.textContent = document.body.classList.contains('light-mode') ? '☀️' : '🌙';
-});
 
 // Advanced options toggle
 const toggleAdvanced = document.getElementById('toggle-advanced');
