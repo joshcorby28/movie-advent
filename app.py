@@ -48,7 +48,7 @@ def fetch_streaming_movies(theme, min_count, category="all", genre=None, min_rat
     page = 1
     if data and data.get('try_again') and min_count > 1:
         page = 2
-    page_limit = 5 if min_count == 1 else 3
+    page_limit = 5 if min_count == 1 or not only_streaming else 3
     sort_by = "vote_average.desc" if min_count == 1 else "popularity.desc"
 
     while len(movies) < min_count and page <= page_limit:  # limit pages for speed
@@ -123,7 +123,7 @@ def fetch_streaming_movies(theme, min_count, category="all", genre=None, min_rat
             providers_list = providers_data.get("results", {}).get("GB", {}).get("flatrate", [])
             providers = [UK_SERVICE_NAMES.get(p["provider_id"], p["provider_name"]) for p in providers_list]
             print(f"Providers for {movie_id}: {providers}")
-            if not providers:
+            if only_streaming and not providers:
                 continue
 
             movies.append({
