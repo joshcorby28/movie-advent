@@ -57,7 +57,7 @@ def fetch_streaming_movies(theme, min_count, category="all", genre=None, min_rat
             f"?api_key={API_KEY}"
             "&language=en-US"
             "&with_original_language=en"
-            "&with_origin_country=US,GB"
+            "&with_origin_country=US"
             f"&sort_by={sort_by}"
             f"&with_watch_providers={'|'.join(map(str, UK_SERVICES))}"
             "&watch_region=GB"
@@ -183,9 +183,11 @@ def get_movies():
     year_to = data.get("year_to", "")
     print(f"Fetching movies for theme: {theme}, genre: {genre}, year_from: {year_from}, year_to: {year_to}, min_count: {min_count}, category: {category}")
     min_rating = data.get('min_rating', '')
-    if min_rating:
-        min_rating = float(min_rating) / 10
-    movies = fetch_streaming_movies(theme, min_count, category, genre, str(min_rating) if min_rating else '', year_from, year_to, data=data)
+    if min_rating and float(min_rating) > 0:
+        min_rating = str(float(min_rating) / 10)
+    else:
+        min_rating = ''
+    movies = fetch_streaming_movies(theme, min_count, category, genre, min_rating, year_from, year_to, data=data)
     print(f"Fetched {len(movies)} movies")
 
     message = ""
