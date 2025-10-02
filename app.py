@@ -126,7 +126,9 @@ def fetch_streaming_movies(theme, min_count, category="all", genre=None, min_rat
                 print(f"Failed to get providers for {movie_id}")
                 continue  # Skip if can't get providers
             providers_data = providers_response.json()
-            providers_list = providers_data.get("results", {}).get("US", {}).get("flatrate", [])
+            providers_list = providers_data.get("results", {}).get("GB", {}).get("flatrate", [])
+            if not providers_list:
+                providers_list = providers_data.get("results", {}).get("US", {}).get("flatrate", [])
             if only_streaming and not any(str(p["provider_id"]) in services for p in providers_list):
                 continue
             providers = [UK_SERVICE_NAMES.get(p["provider_id"], p["provider_name"]) for p in providers_list if str(p["provider_id"]) in services]
