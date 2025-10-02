@@ -182,7 +182,10 @@ def get_movies():
     year_from = data.get("year_from", "")
     year_to = data.get("year_to", "")
     print(f"Fetching movies for theme: {theme}, genre: {genre}, year_from: {year_from}, year_to: {year_to}, min_count: {min_count}, category: {category}")
-    movies = fetch_streaming_movies(theme, min_count, category, genre, data.get('min_rating', ''), year_from, year_to, data=data)
+    min_rating = data.get('min_rating', '')
+    if min_rating:
+        min_rating = float(min_rating) / 10
+    movies = fetch_streaming_movies(theme, min_count, category, genre, str(min_rating) if min_rating else '', year_from, year_to, data=data)
     print(f"Fetched {len(movies)} movies")
 
     message = ""
