@@ -39,7 +39,7 @@ UK_SERVICE_NAMES = {
     337: "Disney+"
 }
 
-def fetch_streaming_movies(theme, min_count, category="all", genre=None, min_rating="", year_from="", year_to="", exclude_titles=[], only_streaming=True, data=None):
+def fetch_streaming_movies(theme, min_count, category="all", genre=None, min_rating="", year_from="", year_to="", exclude_titles=[], only_streaming=True, services=['8','9','337']):
     print(f"Fetching movies with theme: {theme}, min_count: {min_count}, category: {category}")
     movies = []
     seen_ids = set()
@@ -55,7 +55,7 @@ def fetch_streaming_movies(theme, min_count, category="all", genre=None, min_rat
         sort_by = random.choice(['popularity.desc', 'vote_average.desc', 'release_date.desc'])
 
     while len(movies) < min_count and page <= page_limit:  # limit pages for speed
-        providers_part = f"&with_watch_providers={'|'.join(map(str, UK_SERVICES))}&watch_region=GB" if only_streaming else ""
+        providers_part = f"&with_watch_providers={','.join(services)}&watch_region=GB" if only_streaming and services else ""
         url = (
             "https://api.themoviedb.org/3/discover/movie"
             f"?api_key={API_KEY}"
