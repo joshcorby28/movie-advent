@@ -245,6 +245,7 @@ input:checked + .slider {
 
 input:checked + .slider:before {
     transform: translateX(26px);
+    background-color: #1b1b1b;
 }
 
 /* Advanced drawer */
