@@ -39,7 +39,7 @@ UK_SERVICE_NAMES = {
     337: "Disney+"
 }
 
-def fetch_streaming_movies(theme, min_count, category="all", genre=None, min_rating="", year_from="", year_to="", exclude_titles=[], data=None):
+def fetch_streaming_movies(theme, min_count, category="all", genre=None, min_rating="", year_from="", year_to="", exclude_titles=[], only_streaming=True, data=None):
     print(f"Fetching movies with theme: {theme}, min_count: {min_count}, category: {category}")
     movies = []
     seen_ids = set()
@@ -52,14 +52,14 @@ def fetch_streaming_movies(theme, min_count, category="all", genre=None, min_rat
     sort_by = "vote_average.desc" if min_count == 1 else "popularity.desc"
 
     while len(movies) < min_count and page <= page_limit:  # limit pages for speed
+        providers_part = f"&with_watch_providers={'|'.join(map(str, UK_SERVICES))}&watch_region=GB" if only_streaming else ""
         url = (
             "https://api.themoviedb.org/3/discover/movie"
             f"?api_key={API_KEY}"
             "&language=en-US"
             "&with_original_language=en"
             f"&sort_by={sort_by}"
-            f"&with_watch_providers={'|'.join(map(str, UK_SERVICES))}"
-            "&watch_region=GB"
+            f"{providers_part}"
             f"&page={page}"
         )
         keyword = THEME_KEYWORD_MAP.get(theme)
@@ -186,7 +186,8 @@ def get_movies():
         min_rating = str(float(min_rating) / 10)
     else:
         min_rating = ''
-    movies = fetch_streaming_movies(theme, min_count, category, genre, min_rating, year_from, year_to, data=data)
+    only_streaming = data.get('only_streaming', True)
+    movies = fetch_streaming_movies(theme, min_count, category, genre, min_rating, year_from, year_to, exclude_titles, only_streaming, data)
     print(f"Fetched {len(movies)} movies")
 
     message = ""
@@ -223,7 +224,8 @@ def get_replacement_movie():
         theme = MONTH_THEME_MAP.get(month_number, "Movies")
         min_count = 1
 
-    movies = fetch_streaming_movies(theme, min_count, category, genre, min_rating, year_from, year_to, exclude_titles, data)
+    only_streaming = data.get('only_streaming', True)
+    movies = fetch_streaming_movies(theme, min_count, category, genre, min_rating, year_from, year_to, exclude_titles, only_streaming, data)
     print(f"Replacement movies fetched: {len(movies)}")
     if movies:
         print(f"Selected replacement movie: {movies[0]['title']}")

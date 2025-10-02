@@ -49,6 +49,7 @@
         <input type="number" name="year_to" placeholder="To Year">
         <label for="min_rating">Min Rating: <span id="rating-value">0</span></label>
         <input type="range" id="min_rating" name="min_rating" min="0" max="100" value="0">
+        <label><input type="checkbox" id="only-streaming" name="only_streaming" checked> Only show streaming movies</label>
     </div>
     <select name="category">
         <option value="all">All</option>
@@ -108,7 +109,8 @@ form.addEventListener('submit', async function(e){
         year_from: formData.get('year_from'),
         year_to: formData.get('year_to'),
         category: formData.get('category'),
-        min_rating: formData.get('min_rating')
+        min_rating: formData.get('min_rating'),
+        only_streaming: formData.get('only_streaming') === 'on'
     };
 
     try {
@@ -225,6 +227,7 @@ document.addEventListener('click', function(e) {
             year_to: formData.get('year_to'),
             category: formData.get('category'),
             min_rating: formData.get('min_rating'),
+            only_streaming: formData.get('only_streaming') === 'on',
             current_titles: currentTitles
         };
 
@@ -282,6 +285,7 @@ document.getElementById('try-again').addEventListener('click', function() {
         year_to: formData.get('year_to'),
         category: formData.get('category'),
         min_rating: formData.get('min_rating'),
+        only_streaming: formData.get('only_streaming') === 'on',
         try_again: true
     };
 
