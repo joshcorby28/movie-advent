@@ -145,12 +145,17 @@ form.addEventListener('submit', async function(e){
             div.classList.add('day');
             let posterHtml = '';
             if (movie.poster_path) {
-                posterHtml = `<img src="https://image.tmdb.org/t/p/w200${movie.poster_path}" alt="${movie.title} poster" style="width:100%;     max-height: 300px; height:100%;">`;
+                posterHtml = `<div class="poster-container">
+                    <img src="https://image.tmdb.org/t/p/w200${movie.poster_path}" alt="${movie.title} poster" style="width:100%; max-height: 300px; height:100%;">
+                    <div class="poster-number">${i + 1}</div>
+                </div>`;
+            } else {
+                posterHtml = `<div class="poster-number">${i + 1}</div>`;
             }
             div.innerHTML = `
                 ${posterHtml}
                 <div class="content">
-                    <h3>${i + 1}: ${movie.title}</h3>
+                    <h3>${movie.title}</h3>
                     <button class="stream-btn" data-providers="${movie.providers.join(', ')}" data-title="${movie.title}">Stream Now</button>
                     <button class="replace-btn" data-index="${i}">Replace Movie</button>
                 </div>`;
@@ -242,12 +247,17 @@ document.addEventListener('click', function(e) {
                 const card = e.target.closest('.day');
                 let posterHtml = '';
                 if (movie.poster_path) {
-                    posterHtml = `<img src="https://image.tmdb.org/t/p/w200${movie.poster_path}" alt="${movie.title} poster" style="width:100%;     max-height: 300px; height:100%;">`;
+                    posterHtml = `<div class="poster-container">
+                        <img src="https://image.tmdb.org/t/p/w200${movie.poster_path}" alt="${movie.title} poster" style="width:100%; max-height: 300px; height:100%;">
+                        <div class="poster-number">${parseInt(index) + 1}</div>
+                    </div>`;
+                } else {
+                    posterHtml = `<div class="poster-number">${parseInt(index) + 1}</div>`;
                 }
                 card.innerHTML = `
                     ${posterHtml}
                     <div class="content">
-                        <h3>${parseInt(index) + 1}: ${movie.title}</h3>
+                        <h3>${movie.title}</h3>
                         <button class="stream-btn" data-providers="${movie.providers.join(', ')}" data-title="${movie.title}">Stream Now</button>
                         <button class="replace-btn" data-index="${index}">Replace Movie</button>
                     </div>`;
