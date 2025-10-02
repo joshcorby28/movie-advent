@@ -1,3 +1,4 @@
-import sass
+import shutil
 
-sass.compile(dirname=('scss', 'static'))
+shutil.copy('scss/main.scss', 'static/main.css')
+print("Compiled SCSS to CSS")
