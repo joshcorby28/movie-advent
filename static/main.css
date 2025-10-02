@@ -204,6 +204,11 @@ button:hover {
     background-color: rgba(0, 0, 0, 0.5);
 }
 
+#saveModal input {
+    color: #000;
+    background: #fff;
+}
+
 .modal-content {
     background-color: #fff;
     margin: 15% auto;
@@ -324,6 +329,43 @@ input:checked + .slider:before {
 
 #toggle-advanced:checked ~ .advanced-drawer {
     left: 20px;
+}
+
+/* Checkbox styles in advanced drawer */
+.advanced-drawer input[type="checkbox"] {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #fff;
+    border-radius: 3px;
+    background: transparent;
+    cursor: pointer;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+.advanced-drawer input[type="checkbox"]:checked {
+    background: #fff;
+    border-color: #fff;
+}
+
+.advanced-drawer input[type="checkbox"]:checked::after {
+    content: '✓';
+    color: #000;
+    font-size: 14px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.advanced-drawer label {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    cursor: pointer;
+    color: #fff;
 }
 
 

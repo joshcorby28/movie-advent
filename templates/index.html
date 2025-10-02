@@ -5,9 +5,20 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
 </head>
-<body>
+<body style="padding-top: 60px;">
 
-<img src="{{ url_for('static', filename='logo.png') }}" alt="Reel Season Logo" style="max-width: 300px; height: auto; margin-bottom: 20px;">
+<header style="position: fixed; top: 0; right: 0; padding: 10px; background: rgba(0,0,0,0.5); border-radius: 0 0 0 10px; z-index: 1000;">
+    {% if user.is_authenticated %}
+        <span style="color: #f5f5f5; margin-right: 10px;">Welcome, {{ user.username }}!</span>
+        <a href="{{ url_for('my_lists') }}" style="color: #f5f5f5; text-decoration: none; margin-right: 10px;">My Lists</a>
+        <a href="{{ url_for('logout') }}" style="color: #f5f5f5; text-decoration: none;">Logout</a>
+    {% else %}
+        <a href="{{ url_for('login') }}" style="color: #f5f5f5; text-decoration: none; margin-right: 10px;">Login</a>
+        <a href="{{ url_for('register') }}" style="color: #f5f5f5; text-decoration: none;">Register</a>
+    {% endif %}
+</header>
+
+<a href="{{ url_for('index') }}" style="text-decoration: none;"><img src="{{ url_for('static', filename='logo.png') }}" alt="Reel Season Logo" style="max-width: 300px; height: auto; margin-bottom: 20px; margin-top: 20px;"></a>
 <p style="text-align: center; margin: 0 0 50px 0; font-size: 1.2em; color: #f5f5f5;">Your calendar of chills, cheers, and cinematic magic.</p>
 
 <form id="movieForm">
@@ -50,11 +61,11 @@
         <input type="number" name="year_to" placeholder="To Year">
         <div style="background: rgba(255, 255, 255, 0.1); padding: 12px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.3);">
             <label>Streaming Services:</label><br>
-            <input type="checkbox" id="netflix" name="services" value="8" checked> Netflix<br>
-            <input type="checkbox" id="amazon" name="services" value="9" checked> Amazon Prime<br>
-            <input type="checkbox" id="disney" name="services" value="337" checked> Disney+<br>
-            <input type="checkbox" id="paramount" name="services" value="531"> Paramount+<br>
-            <input type="checkbox" id="apple" name="services" value="350"> Apple TV<br>
+            <label><input type="checkbox" id="netflix" name="services" value="8" checked> Netflix</label><br>
+            <label><input type="checkbox" id="amazon" name="services" value="9" checked> Amazon Prime</label><br>
+            <label><input type="checkbox" id="disney" name="services" value="337" checked> Disney+</label><br>
+            <label><input type="checkbox" id="paramount" name="services" value="531"> Paramount+</label><br>
+            <label><input type="checkbox" id="apple" name="services" value="350"> Apple TV</label><br>
             <hr style="border: none; border-top: 1px solid rgba(255, 255, 255, 0.3); margin: 10px 0;">
             <label style="display: flex; align-items: center;">
                 <input type="checkbox" id="show-non-streaming" name="show_non_streaming" style="width: 20px; margin-right: 10px;">
@@ -75,8 +86,7 @@
 
 
 <div id="loadingContainer">
-    <div id="loadingMessage" style="font-size:1.2rem; margin-bottom:10px;">Generating your movie list...</div>
-    <div id="loadingBarContainer"><div id="loadingBar"></div></div>
+    <div id="loadingMessage" style="font-size:1.2rem; margin-bottom:10px;">Generating your movie list... 0%</div>
 </div>
 
 <h2 id="movieTitle" style="text-align:center;"></h2>
@@ -90,8 +100,31 @@
     </div>
 </div>
 
+<div id="saveModal" class="modal">
+    <div class="modal-content" style="text-align: center;">
+        <span class="close" id="saveModalClose">&times;</span>
+        <h2>Save Your Movie List</h2>
+        <input type="text" id="listName" placeholder="Enter list name" style="width: 80%; padding: 10px; margin: 20px 0; border: none; border-radius: 5px; font-size: 16px;">
+        <br>
+        <button id="saveConfirm" style="padding: 10px 20px; background: #1b1b1b; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">Save</button>
+        <button id="saveCancel" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer;">Cancel</button>
+    </div>
+</div>
+
+<div id="messageModal" class="modal">
+    <div class="modal-content" style="text-align: center;">
+        <span class="close" id="messageModalClose">&times;</span>
+        <h2 id="messageTitle"></h2>
+        <p id="messageText"></p>
+        <button id="messageOK" style="padding: 10px 20px; background: #1b1b1b; color: white; border: none; border-radius: 5px; cursor: pointer;">OK</button>
+        <button id="messageCancel" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; display: none;">Cancel</button>
+    </div>
+</div>
+
 <script>
+const isAuthenticated = {{ user.is_authenticated | tojson }};
 const form = document.getElementById('movieForm');
+let generationData = null;
 const loadingContainer = document.getElementById('loadingContainer');
 const loadingBar = document.getElementById('loadingBar');
 const calendar = document.getElementById('calendar');
@@ -100,18 +133,24 @@ const modal = document.getElementById('streamModal');
 const modalTitle = document.getElementById('modalTitle');
 const modalProviders = document.getElementById('modalProviders');
 const closeBtn = document.getElementsByClassName('close')[0];
+const messageModal = document.getElementById('messageModal');
+const messageTitle = document.getElementById('messageTitle');
+const messageText = document.getElementById('messageText');
+const messageOK = document.getElementById('messageOK');
+const messageCancel = document.getElementById('messageCancel');
+const messageModalClose = document.getElementById('messageModalClose');
 
-form.addEventListener('submit', async function(e){
+form.addEventListener('submit', function(e){
     e.preventDefault();  // Prevent normal form POST
 
     loadingContainer.style.display = 'block';
-    loadingBar.style.width = '0%';
     calendar.innerHTML = '';
     movieTitle.innerText = '';
     document.getElementById('save-list').style.display = 'none';
     document.getElementById('try-again').style.display = 'none';
 
     const formData = new FormData(form);
+    const services = Array.from(document.querySelectorAll('input[name="services"]:checked')).map(cb => cb.value);
     const data = {
         month: formData.get('month'),
         theme: formData.get('theme'),
@@ -119,21 +158,34 @@ form.addEventListener('submit', async function(e){
         year_from: formData.get('year_from'),
         year_to: formData.get('year_to'),
         category: formData.get('category'),
-        only_streaming: formData.get('only_streaming') === 'on'
+        keywords: formData.get('keywords'),
+        only_streaming: !document.getElementById('show-non-streaming').checked,
+        services: services
     };
+    generationData = { ...data };
 
-    try {
-        const response = await fetch('/get_movies', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(data)
-        });
+    let percent = 0;
+    const interval = setInterval(() => {
+        percent += 1;
+        if (percent > 99) percent = 99;
+        loadingMessage.innerText = `Generating your movie list... ${percent}%`;
+    }, 100);
 
+    fetch('/get_movies', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(response => {
         if(!response.ok){
             throw new Error(`Server returned ${response.status}`);
         }
-
-        const result = await response.json();
+        return response.json();
+    })
+    .then(result => {
+        clearInterval(interval);
+        percent = 100;
+        loadingMessage.innerText = `Generating your movie list... ${percent}%`;
         const movies = result.movies;
 
         if(!movies || movies.length === 0){
@@ -170,12 +222,13 @@ form.addEventListener('submit', async function(e){
                 </div>`;
             calendar.appendChild(div);
 
-            // Smooth progress increment
+            // Update progress
             progress += increment;
             if(progress > 100) progress = 100;
-            loadingBar.style.width = progress + '%';
+            loadingMessage.innerText = `Generating your movie list... ${Math.round(progress)}%`;
 
-            await new Promise(r => setTimeout(r, 30)); // Slight delay for smooth animation
+            // Slight delay for smooth animation
+            setTimeout(() => {}, 30);
         }
 
         document.getElementById('save-list').style.display = 'inline-block';
@@ -185,13 +238,15 @@ form.addEventListener('submit', async function(e){
         document.body.style.paddingTop = '20px';
 
         // Event listeners are added via delegation below
-
-    } catch(err){
+    })
+    .catch(err => {
         console.error(err);
         movieTitle.innerText = "Error fetching movies. Check console.";
-    } finally {
+        clearInterval(interval);
+    })
+    .finally(() => {
         setTimeout(() => { loadingContainer.style.display = 'none'; }, 300);
-    }
+    });
 });
 
 // Modal close
@@ -202,6 +257,25 @@ window.onclick = function(event) {
     if (event.target == modal) {
         modal.style.display = 'none';
     }
+    if (event.target == messageModal) {
+        messageModal.style.display = 'none';
+    }
+}
+messageModalClose.onclick = function() {
+    messageModal.style.display = 'none';
+}
+
+function showMessage(title, text, onOK, onCancel) {
+    messageTitle.textContent = title;
+    messageText.textContent = text;
+    messageOK.onclick = () => { messageModal.style.display = 'none'; if(onOK) onOK(); };
+    if(onCancel) {
+        messageCancel.style.display = 'inline-block';
+        messageCancel.onclick = () => { messageModal.style.display = 'none'; onCancel(); };
+    } else {
+        messageCancel.style.display = 'none';
+    }
+    messageModal.style.display = 'block';
 }
 
 
@@ -224,19 +298,13 @@ closeDrawer.addEventListener('click', function() {
 // Replace movie functionality
 document.addEventListener('click', function(e) {
     if (e.target.classList.contains('replace-btn')) {
+        if (!generationData) {
+            alert('Please generate a list first.');
+            return;
+        }
         const index = e.target.getAttribute('data-index');
-        const formData = new FormData(document.getElementById('movieForm'));
-        const currentTitles = Array.from(document.querySelectorAll('.day h3')).map(h => h.textContent.substring(h.textContent.indexOf(':') + 1).trim());
-        const data = {
-            month: formData.get('month'),
-            theme: formData.get('theme'),
-            genre: formData.get('genre'),
-            year_from: formData.get('year_from'),
-            year_to: formData.get('year_to'),
-            category: formData.get('category'),
-            only_streaming: formData.get('only_streaming') === 'on',
-            current_titles: currentTitles
-        };
+        const allTitles = Array.from(document.querySelectorAll('.day h3')).map(h => h.textContent.trim());
+        const data = { ...generationData, current_titles: allTitles };
 
         fetch('/get_replacement_movie', {
             method: 'POST',
@@ -248,27 +316,61 @@ document.addEventListener('click', function(e) {
             if (result.movie) {
                 const movie = result.movie;
                 const card = e.target.closest('.day');
-                let posterHtml = '';
-                if (movie.poster_path) {
-                    posterHtml = `<div class="poster-container">
-                        <img src="https://image.tmdb.org/t/p/w200${movie.poster_path}" alt="${movie.title} poster" style="width:100%; max-height: 300px; height:100%;">
-                        <div class="poster-number">${parseInt(index) + 1}</div>
-                    </div>`;
-                } else {
-                    posterHtml = `<div class="poster-number">${parseInt(index) + 1}</div>`;
+                if (!card) {
+                    console.error('Card not found for replacement');
+                    return;
                 }
-                card.innerHTML = `
-                    ${posterHtml}
-                    <div class="content">
-                        <h3>${movie.title}</h3>
-                        <button class="stream-btn" data-providers="${movie.providers.join(', ')}" data-title="${movie.title}">Stream Now</button>
-                        <button class="replace-btn" data-index="${index}">Replace Movie</button>
-                    </div>`;
+                card.innerHTML = '';
+
+                let posterElement;
+                if (movie.poster_path) {
+                    const posterContainer = document.createElement('div');
+                    posterContainer.className = 'poster-container';
+                    const img = document.createElement('img');
+                    img.src = `https://image.tmdb.org/t/p/w200${movie.poster_path}`;
+                    img.alt = `${movie.title} poster`;
+                    img.style.width = '100%';
+                    img.style.maxHeight = '300px';
+                    img.style.height = '100%';
+                    posterContainer.appendChild(img);
+                    const numberDiv = document.createElement('div');
+                    numberDiv.className = 'poster-number';
+                    numberDiv.textContent = parseInt(index) + 1;
+                    posterContainer.appendChild(numberDiv);
+                    posterElement = posterContainer;
+                } else {
+                    const numberDiv = document.createElement('div');
+                    numberDiv.className = 'poster-number';
+                    numberDiv.textContent = parseInt(index) + 1;
+                    posterElement = numberDiv;
+                }
+                card.appendChild(posterElement);
+
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'content';
+                const h3 = document.createElement('h3');
+                h3.textContent = movie.title;
+                contentDiv.appendChild(h3);
+                const streamBtn = document.createElement('button');
+                streamBtn.className = 'stream-btn';
+                streamBtn.setAttribute('data-providers', movie.providers.join(', '));
+                streamBtn.setAttribute('data-title', movie.title);
+                streamBtn.textContent = 'Stream Now';
+                contentDiv.appendChild(streamBtn);
+                const replaceBtn = document.createElement('button');
+                replaceBtn.className = 'replace-btn';
+                replaceBtn.setAttribute('data-index', index);
+                replaceBtn.textContent = 'Replace Movie';
+                contentDiv.appendChild(replaceBtn);
+                card.appendChild(contentDiv);
             } else {
-                alert('No replacement movie found.');
+                showMessage('No Replacement', 'No replacement movie found.');
             }
         })
-        .catch(err => console.error(err));
+        .catch(err => {
+            console.error(err);
+            showMessage('Error', 'Error replacing movie. Check console for details.');
+        });
     }
 });
 
@@ -289,7 +391,6 @@ document.addEventListener('click', function(e) {
 // Try again functionality
 document.getElementById('try-again').addEventListener('click', function() {
     loadingContainer.style.display = 'block';
-    loadingBar.style.width = '0%';
     calendar.innerHTML = '';
     movieTitle.innerText = '';
 
@@ -302,10 +403,18 @@ document.getElementById('try-again').addEventListener('click', function() {
         year_from: formData.get('year_from'),
         year_to: formData.get('year_to'),
         category: formData.get('category'),
+        keywords: formData.get('keywords'),
         only_streaming: !document.getElementById('show-non-streaming').checked,
         services: services,
         try_again: true
     };
+
+    let percent = 0;
+    const interval = setInterval(() => {
+        percent += 1;
+        if (percent > 99) percent = 99;
+        loadingMessage.innerText = `Generating your movie list... ${percent}%`;
+    }, 100);
 
     fetch('/get_movies', {
         method: 'POST',
@@ -314,6 +423,9 @@ document.getElementById('try-again').addEventListener('click', function() {
     })
     .then(response => response.json())
     .then(result => {
+        clearInterval(interval);
+        percent = 100;
+        loadingMessage.innerText = `Generating your movie list... ${percent}%`;
         const movies = result.movies;
 
         if(!movies || movies.length === 0){
@@ -347,7 +459,7 @@ document.getElementById('try-again').addEventListener('click', function() {
 
             progress += increment;
             if(progress > 100) progress = 100;
-            loadingBar.style.width = progress + '%';
+            loadingMessage.innerText = `Generating your movie list... ${Math.round(progress)}%`;
 
             // Slight delay for smooth animation
             setTimeout(() => {}, 30);
@@ -356,6 +468,7 @@ document.getElementById('try-again').addEventListener('click', function() {
     .catch(err => {
         console.error(err);
         movieTitle.innerText = "Error fetching movies. Check console.";
+        clearInterval(interval);
     })
     .finally(() => {
         setTimeout(() => { loadingContainer.style.display = 'none'; }, 300);
@@ -365,19 +478,78 @@ document.getElementById('try-again').addEventListener('click', function() {
 // Save list functionality
 document.getElementById('save-list').addEventListener('click', function(e) {
     e.preventDefault();
-    const movies = Array.from(document.querySelectorAll('.day h3')).map(h => h.textContent);
+    const movies = Array.from(document.querySelectorAll('.day')).map(day => {
+        const title = day.querySelector('h3').textContent;
+        const providers = day.querySelector('.stream-btn').getAttribute('data-providers');
+        const posterPath = day.querySelector('img') ? day.querySelector('img').src.replace('https://image.tmdb.org/t/p/w200', '') : null;
+        return { title, providers: providers.split(', '), poster_path: posterPath };
+    });
     if (movies.length === 0) {
-        alert('No movies to save. Generate a list first.');
+        showMessage('No Movies', 'No movies to save. Generate a list first.');
         return;
     }
-    const listText = movies.join('\n');
-    const blob = new Blob([listText], {type: 'text/plain'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'movie-list.txt';
-    a.click();
-    URL.revokeObjectURL(url);
+    if (isAuthenticated) {
+        document.getElementById('saveModal').style.display = 'block';
+        document.getElementById('listName').focus();
+    } else {
+        const listText = movies.map(m => m.title).join('\n');
+        const blob = new Blob([listText], {type: 'text/plain'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'movie-list.txt';
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+});
+
+// Save modal functionality
+document.getElementById('saveConfirm').addEventListener('click', function() {
+    const name = document.getElementById('listName').value.trim();
+    if (!name) {
+        showMessage('Invalid Name', 'Please enter a name for your list.');
+        return;
+    }
+    const movies = Array.from(document.querySelectorAll('.day')).map(day => {
+        const title = day.querySelector('h3').textContent;
+        const providers = day.querySelector('.stream-btn').getAttribute('data-providers');
+        const posterPath = day.querySelector('img') ? day.querySelector('img').src.replace('https://image.tmdb.org/t/p/w200', '') : null;
+        return { title, providers: providers.split(', '), poster_path: posterPath };
+    });
+    fetch('/save_list', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ name, movies })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showMessage('Success', 'List saved successfully!');
+            document.getElementById('saveModal').style.display = 'none';
+            document.getElementById('listName').value = '';
+        } else {
+            showMessage('Error', 'Failed to save list.');
+        }
+    })
+    .catch(err => console.error(err));
+});
+
+document.getElementById('saveCancel').addEventListener('click', function() {
+    document.getElementById('saveModal').style.display = 'none';
+    document.getElementById('listName').value = '';
+});
+
+document.getElementById('saveModalClose').addEventListener('click', function() {
+    document.getElementById('saveModal').style.display = 'none';
+    document.getElementById('listName').value = '';
+});
+
+window.addEventListener('click', function(event) {
+    const modal = document.getElementById('saveModal');
+    if (event.target == modal) {
+        modal.style.display = 'none';
+        document.getElementById('listName').value = '';
+    }
 });
 </script>
 

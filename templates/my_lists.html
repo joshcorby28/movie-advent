@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Lists - Reel Season</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+</head>
+<body style="padding-top: 60px;">
+    <header style="position: fixed; top: 0; right: 0; padding: 10px; background: rgba(0,0,0,0.5); border-radius: 0 0 0 10px; z-index: 1000;">
+        {% if current_user.is_authenticated %}
+            <span style="color: #f5f5f5; margin-right: 10px;">Welcome, {{ current_user.username }}!</span>
+            <a href="{{ url_for('my_lists') }}" style="color: #f5f5f5; text-decoration: none; margin-right: 10px;">My Lists</a>
+            <a href="{{ url_for('logout') }}" style="color: #f5f5f5; text-decoration: none;">Logout</a>
+        {% else %}
+            <a href="{{ url_for('login') }}" style="color: #f5f5f5; text-decoration: none; margin-right: 10px;">Login</a>
+            <a href="{{ url_for('register') }}" style="color: #f5f5f5; text-decoration: none;">Register</a>
+        {% endif %}
+    </header>
+    <a href="{{ url_for('index') }}" style="text-decoration: none;"><img src="{{ url_for('static', filename='logo.png') }}" alt="Reel Season Logo" style="max-width: 300px; height: auto; margin-bottom: 20px; margin-top: 20px;"></a>
+    <div style="max-width: 800px; margin: 0 auto; padding: 20px;">
+        <h2 style="text-align: center; color: #f5f5f5;">My Saved Lists</h2>
+        {% if lists %}
+            {% for list in lists %}
+                <div style="background: rgba(255, 255, 255, 0.1); padding: 20px; margin: 20px 0; border-radius: 10px; position: relative;">
+                    <button class="delete-btn" data-id="{{ list.id }}" style="background: #dc3545; color: #fff; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; position: absolute; top: 10px; right: 10px;">Delete List</button>
+                    <h3 style="color: #f5f5f5;">{{ list.name }}</h3>
+                    <p style="color: #ccc;">Created: {{ list.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    <div id="list-{{ list.id }}" class="calendar">
+                        {% for movie in list.parsed_movies %}
+                            <div class="day">
+                                {% if movie.poster_path %}
+                                    <div class="poster-container">
+                                        <img src="https://image.tmdb.org/t/p/w200{{ movie.poster_path }}" alt="{{ movie.title }} poster" style="width:100%; max-height: 300px; height:100%;">
+                                        <div class="poster-number">{{ loop.index }}</div>
+                                    </div>
+                                {% else %}
+                                    <div class="poster-number">{{ loop.index }}</div>
+                                {% endif %}
+                                <div class="content">
+                                    <h3>{{ movie.title }}</h3>
+                                    <button class="stream-btn" data-providers="{{ movie.providers | join(', ') }}" data-title="{{ movie.title }}">Stream Now</button>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p style="text-align: center; color: #f5f5f5;">You haven't saved any lists yet.</p>
+        {% endif %}
+        <p style="text-align: center;"><a href="{{ url_for('index') }}" style="color: #f5f5f5;">Back to Home</a></p>
+    </div>
+
+    <div id="streamModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modalTitle"></h2>
+            <p id="modalProviders"></p>
+        </div>
+    </div>
+    
+    <div id="messageModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <span class="close" id="messageModalClose">&times;</span>
+            <h2 id="messageTitle"></h2>
+            <p id="messageText"></p>
+            <button id="messageOK" style="padding: 10px 20px; background: #1b1b1b; color: white; border: none; border-radius: 5px; cursor: pointer;">Delete</button>
+            <button id="messageCancel" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; display: none;">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        // Modal functionality
+        const modal = document.getElementById('streamModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalProviders = document.getElementById('modalProviders');
+        const closeBtn = document.getElementsByClassName('close')[0];
+        const messageModal = document.getElementById('messageModal');
+        const messageTitle = document.getElementById('messageTitle');
+        const messageText = document.getElementById('messageText');
+        const messageOK = document.getElementById('messageOK');
+        const messageCancel = document.getElementById('messageCancel');
+        const messageModalClose = document.getElementById('messageModalClose');
+
+        closeBtn.onclick = function() {
+            modal.style.display = 'none';
+        }
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+            if (event.target == messageModal) {
+                messageModal.style.display = 'none';
+            }
+        }
+        messageModalClose.onclick = function() {
+            messageModal.style.display = 'none';
+        }
+
+        function showMessage(title, text, onOK, onCancel) {
+            messageTitle.textContent = title;
+            messageText.textContent = text;
+            messageOK.onclick = () => { messageModal.style.display = 'none'; if(onOK) onOK(); };
+            if(onCancel) {
+                messageCancel.style.display = 'inline-block';
+                messageCancel.onclick = () => { messageModal.style.display = 'none'; onCancel(); };
+            } else {
+                messageCancel.style.display = 'none';
+            }
+            messageModal.style.display = 'block';
+        }
+
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('stream-btn')) {
+                modalTitle.textContent = e.target.getAttribute('data-title');
+                const providers = e.target.getAttribute('data-providers');
+                if (providers === '') {
+                    modalProviders.textContent = 'Not available on any UK streaming platforms';
+                } else {
+                    modalProviders.textContent = 'Available on: ' + providers;
+                }
+                modal.style.display = 'block';
+            } else if (e.target.classList.contains('delete-btn')) {
+                const id = e.target.getAttribute('data-id');
+                showMessage('Confirm Delete', 'Are you sure you want to delete this list?', () => {
+                    fetch('/delete_list', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({id: id})
+                    })
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.success) {
+                            e.target.closest('div').remove();
+                        } else {
+                            showMessage('Error', 'Error deleting list: ' + result.error);
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        showMessage('Error', 'Error deleting list.');
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>
