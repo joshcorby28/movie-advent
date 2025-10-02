@@ -46,10 +46,10 @@ def fetch_streaming_movies(theme, min_count, category="all", genre=None, min_rat
     current_year = datetime.now().year
     random.seed(time.time())
     page = 1
+    if data and data.get('try_again') and min_count > 1:
+        page = 2
     page_limit = 5 if min_count == 1 else 3
     sort_by = "vote_average.desc" if min_count == 1 else "popularity.desc"
-    if data and data.get('try_again') and min_count > 1:
-        sort_by = 'vote_average.desc'
 
     while len(movies) < min_count and page <= page_limit:  # limit pages for speed
         url = (
@@ -57,7 +57,7 @@ def fetch_streaming_movies(theme, min_count, category="all", genre=None, min_rat
             f"?api_key={API_KEY}"
             "&language=en-US"
             "&with_original_language=en"
-            "&with_origin_country=US"
+            "&with_origin_country=US,GB"
             f"&sort_by={sort_by}"
             f"&with_watch_providers={'|'.join(map(str, UK_SERVICES))}"
             "&watch_region=GB"
