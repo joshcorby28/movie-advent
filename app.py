@@ -61,6 +61,7 @@ def fetch_streaming_movies(theme, min_count, category="all", genre=None, min_rat
             f"?api_key={API_KEY}"
             "&language=en-US"
             "&with_original_language=en"
+            "&with_runtime.gte=60"
             f"&sort_by={sort_by}"
             f"{providers_part}"
             f"&page={page}"
@@ -109,6 +110,8 @@ def fetch_streaming_movies(theme, min_count, category="all", genre=None, min_rat
             except ValueError:
                 year = 1900
 
+            if year > current_year:
+                continue
             if category == "modern" and year < current_year - 10:
                 continue
             if category == "classics" and year >= current_year - 20:

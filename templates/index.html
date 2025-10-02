@@ -58,9 +58,9 @@
         <option value="classics">Classics</option>
     </select>
     <button type="submit">⚡ Generate</button>
-    <button type="button" id="try-again" style="background:none; color:#17a2b8; border:2px solid #17a2b8; padding:10px; border-radius:6px; cursor:pointer; margin-left:10px; display:none;">↻ Try Again</button>
-    <button type="button" id="save-list" style="background:none; color:#28a745; border:2px solid #28a745; padding:10px; border-radius:6px; cursor:pointer; margin-left:10px; display:none;">📄 Save List</button>
-    <button type="button" id="theme-toggle" style="background:#fff; color:#1b1b1b; border:none; padding:12px; border-radius:6px; cursor:pointer; margin-left:10px;">🌙</button>
+    <a href="#" id="try-again" style="color:#17a2b8; text-decoration: none; font-size: 0.9em; margin-left:10px; display:none;">Try Again</a>
+    <a href="#" id="save-list" style="color:#28a745; text-decoration: none; font-size: 0.9em; margin-left:10px; display:none;">Save List</a>
+    <button type="button" id="theme-toggle" style="position: absolute; top: 20px; right: 20px; background:#fff; color:#1b1b1b; border:none; padding:8px; border-radius:6px; cursor:pointer;">🌙</button>
 </form>
 
 
@@ -358,7 +358,8 @@ document.getElementById('try-again').addEventListener('click', function() {
 });
 
 // Save list functionality
-document.getElementById('save-list').addEventListener('click', function() {
+document.getElementById('save-list').addEventListener('click', function(e) {
+    e.preventDefault();
     const movies = Array.from(document.querySelectorAll('.day h3')).map(h => h.textContent);
     if (movies.length === 0) {
         alert('No movies to save. Generate a list first.');
