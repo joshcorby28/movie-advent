@@ -36,7 +36,9 @@ UK_SERVICES = [8, 9, 337]
 UK_SERVICE_NAMES = {
     8: "Netflix",
     9: "Amazon Prime Video",
-    337: "Disney+"
+    337: "Disney+",
+    531: "Paramount+",
+    350: "Apple TV+"
 }
 
 def fetch_streaming_movies(theme, min_count, category="all", genre=None, min_rating="", year_from="", year_to="", exclude_titles=[], only_streaming=True, services=['8','9','337']):
