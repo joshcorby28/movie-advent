@@ -150,8 +150,8 @@ button:hover {
 }
 
 .replace-btn {
-    background: #ff6600;
-    color: #fff;
+    background: #F2F1F0;
+    color: #000;
     border: none;
     padding: 6px 10px;
     border-radius: 5px;
@@ -161,7 +161,7 @@ button:hover {
 }
 
 .replace-btn:hover {
-    background: #ff8533;
+    background: #e0e0e0;
 }
 
 /* Modal styles */
@@ -240,7 +240,7 @@ button:hover {
 }
 
 input:checked + .slider {
-    background-color: #ff6600;
+    background-color: #F2F1F0;
 }
 
 input:checked + .slider:before {
@@ -251,7 +251,7 @@ input:checked + .slider:before {
 .advanced-drawer {
     position: fixed;
     top: 20px;
-    left: -300px;
+    left: -390px;
     width: 280px;
     height: auto;
     background: rgba(0, 0, 0, 0.9);
