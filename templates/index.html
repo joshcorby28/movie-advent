@@ -403,7 +403,7 @@ document.addEventListener('click', function(e) {
                 const card = e.target.closest('.day');
                 let posterHtml = '';
                 if (movie.poster_path) {
-                    posterHtml = `<img src="https://image.tmdb.org/t/p/w200${movie.poster_path}" alt="${movie.title} poster">`;
+                    posterHtml = `<img src="https://image.tmdb.org/t/p/w200${movie.poster_path}" alt="${movie.title} poster" style="width:100%;     max-height: 300px; height:100%;">`;
                 }
                 card.innerHTML = `
                     ${posterHtml}
