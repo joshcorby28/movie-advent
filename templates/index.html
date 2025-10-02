@@ -264,7 +264,12 @@ document.addEventListener('click', function(e) {
 document.addEventListener('click', function(e) {
     if (e.target.classList.contains('stream-btn')) {
         modalTitle.textContent = e.target.getAttribute('data-title');
-        modalProviders.textContent = 'Available on: ' + e.target.getAttribute('data-providers');
+        const providers = e.target.getAttribute('data-providers');
+        if (providers === '') {
+            modalProviders.textContent = 'Not available on any UK streaming platforms';
+        } else {
+            modalProviders.textContent = 'Available on: ' + providers;
+        }
         modal.style.display = 'block';
     }
 });
