@@ -55,7 +55,7 @@ def fetch_streaming_movies(theme, min_count, category="all", genre=None, min_rat
         sort_by = random.choice(['popularity.desc', 'vote_average.desc', 'release_date.desc'])
 
     while len(movies) < min_count and page <= page_limit:  # limit pages for speed
-        providers_part = f"&with_watch_providers={','.join(services)}&watch_region=GB" if only_streaming and services else ""
+        providers_part = ""
         url = (
             "https://api.themoviedb.org/3/discover/movie"
             f"?api_key={API_KEY}"
