@@ -57,7 +57,6 @@ def fetch_streaming_movies(theme, min_count, category="all", genre=None, min_rat
             f"?api_key={API_KEY}"
             "&language=en-US"
             "&with_original_language=en"
-            "&with_origin_country=US"
             f"&sort_by={sort_by}"
             f"&with_watch_providers={'|'.join(map(str, UK_SERVICES))}"
             "&watch_region=GB"
