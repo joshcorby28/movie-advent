@@ -187,6 +187,7 @@ def get_movies():
     else:
         min_rating = ''
     only_streaming = data.get('only_streaming', True)
+    exclude_titles = []
     movies = fetch_streaming_movies(theme, min_count, category, genre, min_rating, year_from, year_to, exclude_titles, only_streaming, data)
     print(f"Fetched {len(movies)} movies")
 
