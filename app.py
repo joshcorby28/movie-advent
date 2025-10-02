@@ -49,7 +49,10 @@ def fetch_streaming_movies(theme, min_count, category="all", genre=None, min_rat
     if data and data.get('try_again') and min_count > 1:
         page = 2
     page_limit = 5 if min_count == 1 or not only_streaming else 3
-    sort_by = "vote_average.desc" if min_count == 1 else "popularity.desc"
+    if min_count == 1:
+        sort_by = "vote_average.desc"
+    else:
+        sort_by = random.choice(['popularity.desc', 'vote_average.desc', 'release_date.desc'])
 
     while len(movies) < min_count and page <= page_limit:  # limit pages for speed
         providers_part = f"&with_watch_providers={'|'.join(map(str, UK_SERVICES))}&watch_region=GB" if only_streaming else ""
