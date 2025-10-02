@@ -1,20 +1,12 @@
-// Variables
-$primary-color: #000;
-$secondary-color: #2c2c2c;
-$text-color: #f5f5f5;
-$accent-color: #ff6600;
-$border-radius: 6px;
-$font-family: 'Montserrat', sans-serif;
-
-// Base styles
+/* Base styles */
 body {
-    font-family: $font-family;
+    font-family: 'Montserrat', sans-serif;
     font-weight: 400;
     margin: 0;
     padding: 0;
     min-height: 100vh;
-    background: linear-gradient(to bottom, $primary-color, $secondary-color);
-    color: $text-color;
+    background: linear-gradient(to bottom, #000, #2c2c2c);
+    color: #f5f5f5;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -27,7 +19,7 @@ h1, h2 {
     font-weight: 400;
 }
 
-// Form styles
+/* Form styles */
 form {
     display: flex;
     justify-content: center;
@@ -40,8 +32,8 @@ form {
 input, select, button {
     padding: 12px;
     font-size: 0.9rem;
-    border-radius: $border-radius;
-    font-family: $font-family;
+    border-radius: 6px;
+    font-family: 'Montserrat', sans-serif;
 }
 
 input {
@@ -49,10 +41,10 @@ input {
     border: 1px solid rgba(255, 255, 255, 0.3);
     color: #fff;
     background: rgba(255, 255, 255, 0.1);
+}
 
-    &::placeholder {
-        color: #ccc;
-    }
+input::placeholder {
+    color: #ccc;
 }
 
 select {
@@ -64,19 +56,19 @@ select {
     padding: 12px 3em 12px 12px;
     box-shadow: 0 0 1em 0 rgba(0, 0, 0, 0.2);
     cursor: pointer;
+}
 
-    &::-ms-expand {
-        display: none;
-    }
+select::-ms-expand {
+    display: none;
+}
 
-    &:focus {
-        outline: none;
-    }
+select:focus {
+    outline: none;
+}
 
-    option {
-        color: #1b1b1b;
-        background-color: #fff;
-    }
+select option {
+    color: #1b1b1b;
+    background-color: #fff;
 }
 
 button {
@@ -85,13 +77,13 @@ button {
     cursor: pointer;
     border: none;
     transition: background 0.3s;
-
-    &:hover {
-        background: #f0f0f0;
-    }
 }
 
-// Calendar styles
+button:hover {
+    background: #f0f0f0;
+}
+
+/* Calendar styles */
 .calendar {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -110,39 +102,39 @@ button {
     flex-direction: column;
     overflow: hidden;
     transition: transform 0.2s, box-shadow 0.2s;
-
-    &:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.6);
-    }
-
-    img {
-        border-radius: 15px 15px 0 0;
-        width: 100%;
-        height: 150px;
-        object-fit: cover;
-    }
-
-    .content {
-        padding: 15px;
-        background: rgba(255, 255, 255);
-        backdrop-filter: blur(10px);
-        flex-grow: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        color: #1b1b1b;
-
-        h3 {
-            min-height: 50px;
-            margin: 0 0 8px 0;
-            font-size: 1rem;
-            font-weight: 400;
-        }
-    }
 }
 
-// Button styles
+.day:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.6);
+}
+
+.day img {
+    border-radius: 15px 15px 0 0;
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+}
+
+.day .content {
+    padding: 15px;
+    background: rgba(255, 255, 255);
+    backdrop-filter: blur(10px);
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    color: #1b1b1b;
+}
+
+.day .content h3 {
+    min-height: 50px;
+    margin: 0 0 8px 0;
+    font-size: 1rem;
+    font-weight: 400;
+}
+
+/* Button styles */
 .stream-btn {
     background: #1b1b1b;
     color: #fff;
@@ -151,14 +143,14 @@ button {
     border-radius: 5px;
     cursor: pointer;
     font-size: 0.9rem;
+}
 
-    &:hover {
-        background: #3c3c3c;
-    }
+.stream-btn:hover {
+    background: #3c3c3c;
 }
 
 .replace-btn {
-    background: $accent-color;
+    background: #ff6600;
     color: #fff;
     border: none;
     padding: 6px 10px;
@@ -166,13 +158,13 @@ button {
     cursor: pointer;
     font-size: 0.8rem;
     margin-top: 5px;
-
-    &:hover {
-        background: #ff8533;
-    }
 }
 
-// Modal styles
+.replace-btn:hover {
+    background: #ff8533;
+}
+
+/* Modal styles */
 .modal {
     display: none;
     position: fixed;
@@ -182,18 +174,18 @@ button {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
+}
 
-    &-content {
-        background-color: #fff;
-        margin: 15% auto;
-        padding: 20px;
-        border: 1px solid #888;
-        width: 80%;
-        max-width: 400px;
-        border-radius: 10px;
-        color: #1b1b1b;
-        text-align: center;
-    }
+.modal-content {
+    background-color: #fff;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 400px;
+    border-radius: 10px;
+    color: #1b1b1b;
+    text-align: center;
 }
 
 .close {
@@ -202,60 +194,60 @@ button {
     font-size: 28px;
     font-weight: bold;
     cursor: pointer;
-
-    &:hover {
-        color: #000;
-    }
 }
 
-// Toggle switch
+.close:hover {
+    color: #000;
+}
+
+/* Toggle switch */
 .toggle-switch {
     position: relative;
     display: inline-block;
     width: 50px;
     height: 24px;
     margin-right: 10px;
-
-    input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-    }
-
-    .slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: rgba(255, 255, 255, 0.3);
-        transition: 0.4s;
-        border-radius: 24px;
-
-        &:before {
-            position: absolute;
-            content: "";
-            height: 18px;
-            width: 18px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: 0.4s;
-            border-radius: 50%;
-        }
-    }
-
-    input:checked + .slider {
-        background-color: $accent-color;
-
-        &:before {
-            transform: translateX(26px);
-        }
-    }
 }
 
-// Advanced drawer
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.3);
+    transition: 0.4s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #ff6600;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+/* Advanced drawer */
 .advanced-drawer {
     position: fixed;
     top: 20px;
@@ -272,88 +264,88 @@ button {
     display: flex;
     flex-direction: column;
     gap: 10px;
-
-    .drawer-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 10px;
-
-        h3 {
-            margin: 0;
-            color: #fff;
-            font-size: 1.2em;
-        }
-    }
-
-    #close-drawer {
-        background: none;
-        border: none;
-        color: #fff;
-        font-size: 1.5em;
-        cursor: pointer;
-        padding: 0;
-        width: 30px;
-        height: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    #toggle-advanced:checked ~ & {
-        left: 20px;
-    }
 }
 
-// Light mode
+.drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.drawer-header h3 {
+    margin: 0;
+    color: #fff;
+    font-size: 1.2em;
+}
+
+#close-drawer {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1.5em;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#toggle-advanced:checked ~ .advanced-drawer {
+    left: 20px;
+}
+
+/* Light mode */
 .light-mode {
     background: linear-gradient(to bottom, #fff, #f0f0f0);
     color: #000;
-
-    .day {
-        background: #e0e0e0;
-
-        .content {
-            background: rgba(255, 255, 255, 0.9);
-            color: #000;
-        }
-    }
-
-    input, select {
-        border: 1px solid rgba(0, 0, 0, 0.3);
-        color: #000;
-        background: rgba(0, 0, 0, 0.1);
-    }
-
-    select {
-        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="black"><path d="M4 7l3 3 3-3z"/></svg>') no-repeat right 1.5em center / 1.4em, rgba(0, 0, 0, 0.1);
-
-        option {
-            color: #000;
-            background-color: #fff;
-        }
-    }
-
-    button {
-        background: #000;
-        color: #fff;
-
-        &:hover {
-            background: #333;
-        }
-    }
-
-    #theme-toggle {
-        background: #1b1b1b !important;
-        color: #fff;
-    }
-
-    #loadingBar {
-        background: #000;
-    }
 }
 
-// Loading styles
+.light-mode .day {
+    background: #e0e0e0;
+}
+
+.light-mode .day .content {
+    background: rgba(255, 255, 255, 0.9);
+    color: #000;
+}
+
+.light-mode input, .light-mode select {
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    color: #000;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.light-mode select {
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="black"><path d="M4 7l3 3 3-3z"/></svg>') no-repeat right 1.5em center / 1.4em, rgba(0, 0, 0, 0.1);
+}
+
+.light-mode select option {
+    color: #000;
+    background-color: #fff;
+}
+
+.light-mode button {
+    background: #000;
+    color: #fff;
+}
+
+.light-mode button:hover {
+    background: #333;
+}
+
+.light-mode #theme-toggle {
+    background: #1b1b1b !important;
+    color: #fff;
+}
+
+.light-mode #loadingBar {
+    background: #000;
+}
+
+/* Loading styles */
 #loadingContainer {
     text-align: center;
     margin-bottom: 20px;
@@ -377,7 +369,7 @@ button {
     transition: width 0.2s;
 }
 
-// Media queries
+/* Media queries */
 @media (max-width: 900px) {
     .calendar {
         grid-template-columns: repeat(4, 1fr);
