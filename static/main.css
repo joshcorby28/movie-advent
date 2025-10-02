@@ -374,6 +374,18 @@ input:checked + .slider:before {
     color: #000;
 }
 
+.light-mode #close-drawer {
+    color: #000;
+}
+
+.light-mode footer {
+    color: #333;
+}
+
+.light-mode img[alt="Reel Season Logo"] {
+    filter: invert(1);
+}
+
 .light-mode #theme-toggle {
     background: #1b1b1b !important;
     color: #fff;
