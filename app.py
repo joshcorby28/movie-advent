@@ -46,7 +46,6 @@ def fetch_streaming_movies(theme, min_count, category="all", genre=None, min_rat
     current_year = datetime.now().year
     random.seed(time.time())
     page = 1
-    if data and data.get('try_again') and min_count > 1:
         page = 2
     page_limit = 5 if min_count == 1 or not only_streaming else 3
     if min_count == 1:
