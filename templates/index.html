@@ -224,6 +224,7 @@ input:checked + .slider:before {
         <option value="classics">Classics</option>
     </select>
     <button type="submit">⚡ Generate</button>
+    <button type="button" id="try-again" style="background:#17a2b8; color:#fff; border:none; padding:12px; border-radius:6px; cursor:pointer; margin-left:10px; display:none;">🔄 Try Again</button>
     <button type="button" id="save-list" style="background:#28a745; color:#fff; border:none; padding:12px; border-radius:6px; cursor:pointer; margin-left:10px; display:none;">💾 Save List</button>
     <button type="button" id="theme-toggle" style="background:#fff; color:#1b1b1b; border:none; padding:12px; border-radius:6px; cursor:pointer; margin-left:10px;">🌙</button>
 </form>
@@ -265,6 +266,7 @@ form.addEventListener('submit', async function(e){
     calendar.innerHTML = '';
     movieTitle.innerText = '';
     document.getElementById('save-list').style.display = 'none';
+    document.getElementById('try-again').style.display = 'none';
 
     const formData = new FormData(form);
     const data = {
@@ -328,6 +330,7 @@ form.addEventListener('submit', async function(e){
         }
 
         document.getElementById('save-list').style.display = 'inline-block';
+        document.getElementById('try-again').style.display = 'inline-block';
 
         document.body.style.justifyContent = 'flex-start';
         document.body.style.paddingTop = '20px';
@@ -427,6 +430,79 @@ document.addEventListener('click', function(e) {
         modalProviders.textContent = 'Available on: ' + e.target.getAttribute('data-providers');
         modal.style.display = 'block';
     }
+});
+
+// Try again functionality
+document.getElementById('try-again').addEventListener('click', function() {
+    loadingContainer.style.display = 'block';
+    loadingBar.style.width = '0%';
+    calendar.innerHTML = '';
+    movieTitle.innerText = '';
+
+    const formData = new FormData(form);
+    const data = {
+        month: formData.get('month'),
+        theme: formData.get('theme'),
+        genre: formData.get('genre'),
+        year_from: formData.get('year_from'),
+        year_to: formData.get('year_to'),
+        category: formData.get('category'),
+        try_again: true
+    };
+
+    fetch('/get_movies', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        const movies = result.movies;
+
+        if(!movies || movies.length === 0){
+            movieTitle.innerText = "No movies found for this month/category.";
+            loadingContainer.style.display = 'none';
+            return;
+        }
+
+        movieTitle.innerText = result.message || "Get the popcorn and enjoy";
+
+        let progress = 0;
+        const increment = 100 / movies.length;
+
+        for (let i = 0; i < movies.length; i++) {
+            const movie = movies[i];
+
+            const div = document.createElement('div');
+            div.classList.add('day');
+            let posterHtml = '';
+            if (movie.poster_path) {
+                posterHtml = `<img src="https://image.tmdb.org/t/p/w200${movie.poster_path}" alt="${movie.title} poster" style="width:100%;     max-height: 300px; height:100%;">`;
+            }
+            div.innerHTML = `
+                ${posterHtml}
+                <div class="content">
+                    <h3>${i + 1}: ${movie.title}</h3>
+                    <button class="stream-btn" data-providers="${movie.providers.join(', ')}" data-title="${movie.title}">Stream Now</button>
+                    <button class="replace-btn" data-index="${i}">Replace Movie</button>
+                </div>`;
+            calendar.appendChild(div);
+
+            progress += increment;
+            if(progress > 100) progress = 100;
+            loadingBar.style.width = progress + '%';
+
+            // Slight delay for smooth animation
+            setTimeout(() => {}, 30);
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        movieTitle.innerText = "Error fetching movies. Check console.";
+    })
+    .finally(() => {
+        setTimeout(() => { loadingContainer.style.display = 'none'; }, 300);
+    });
 });
 
 // Save list functionality
