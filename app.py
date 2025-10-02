@@ -181,14 +181,9 @@ def get_movies():
     year_from = data.get("year_from", "")
     year_to = data.get("year_to", "")
     print(f"Fetching movies for theme: {theme}, genre: {genre}, year_from: {year_from}, year_to: {year_to}, min_count: {min_count}, category: {category}")
-    min_rating = data.get('min_rating', '')
-    if min_rating and float(min_rating) > 0:
-        min_rating = str(float(min_rating) / 10)
-    else:
-        min_rating = ''
     only_streaming = data.get('only_streaming', True)
     exclude_titles = []
-    movies = fetch_streaming_movies(theme, min_count, category, genre, min_rating, year_from, year_to, exclude_titles, only_streaming, data)
+    movies = fetch_streaming_movies(theme, min_count, category, genre, '', year_from, year_to, exclude_titles, only_streaming, data)
     print(f"Fetched {len(movies)} movies")
 
     message = ""
@@ -226,7 +221,7 @@ def get_replacement_movie():
         min_count = 1
 
     only_streaming = data.get('only_streaming', True)
-    movies = fetch_streaming_movies(theme, min_count, category, genre, min_rating, year_from, year_to, exclude_titles, only_streaming, data)
+    movies = fetch_streaming_movies(theme, min_count, category, genre, '', year_from, year_to, exclude_titles, only_streaming, data)
     print(f"Replacement movies fetched: {len(movies)}")
     if movies:
         print(f"Selected replacement movie: {movies[0]['title']}")
