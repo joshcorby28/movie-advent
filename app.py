@@ -8,7 +8,7 @@ import os
 
 app = Flask(__name__)
 
-API_KEY = "0583fddd4f95815a08d57376fe8bd414"
+API_KEY = os.environ.get('TMDB_API_KEY', '0583fddd4f95815a08d57376fe8bd414')
 
 MONTH_THEME_MAP = {
     1: "Winter", 2: "Winter", 3: "Spring", 4: "Spring", 5: "Spring",
