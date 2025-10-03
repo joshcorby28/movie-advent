@@ -43,14 +43,15 @@ THEME_GENRE_MAP = {
     "Movies": None
 }
 
-# Only Netflix, Amazon Prime, Disney+
-UK_SERVICES = [8, 9, 337]
+# UK streaming services including Shudder
+UK_SERVICES = [8, 9, 337, 99]
 UK_SERVICE_NAMES = {
     8: "Netflix",
     9: "Amazon Prime Video",
     337: "Disney+",
     531: "Paramount+",
-    350: "Apple TV+"
+    350: "Apple TV+",
+    99: "Shudder"
 }
 
 class User(UserMixin, db.Model):
@@ -177,7 +178,7 @@ def get_theme_keywords(theme):
             return []
 
 def fetch_streaming_movies(theme, min_count, category="all", genre=None, year_from="", year_to="", exclude_titles=[], only_streaming=True, selected_services=None):
-    selected_services = selected_services or ['8','9','337']  # Netflix, Prime, Disney+
+    selected_services = selected_services or ['8','9','337','99']  # Netflix, Prime, Disney+, Shudder
     print(f"DEBUG: Fetching movies with theme: {theme}, min_count: {min_count}, category: {category}")
 
     movies = []
@@ -636,7 +637,7 @@ def search_movies():
             f"https://api.themoviedb.org/3/search/movie?"
             f"api_key={API_KEY}&language=en-US&region=GB"
             f"&query={requests.utils.quote(query)}"
-            f"&include_adult=false&with_watch_providers=8|9|337"
+            f"&include_adult=false&with_watch_providers=8|9|337|99"
             f"&watch_region=GB&page=1"
         )
 
@@ -668,6 +669,73 @@ def search_movies():
 
     except Exception as e:
         print(f"ERROR: Exception during movie search: {str(e)}")
+        return jsonify({'error': 'Search failed'}), 500
+
+@app.route('/search_movies_where_to_watch')
+def search_movies_where_to_watch():
+    """Search for movies with UK streaming provider information"""
+    try:
+        query = request.args.get('query', '').strip()
+        if not query:
+            return jsonify({'error': 'No search query provided'}), 400
+
+        print(f"DEBUG: Searching for movies with streaming info - query: {query}")
+
+        # First, search for movies
+        search_url = (
+            f"https://api.themoviedb.org/3/search/movie?"
+            f"api_key={API_KEY}&language=en-US&region=GB"
+            f"&query={requests.utils.quote(query)}"
+            f"&include_adult=false&page=1"
+        )
+
+        search_response = requests.get(search_url, timeout=10)
+        print(f"DEBUG: TMDB search response status: {search_response.status_code}")
+
+        if search_response.status_code != 200:
+            print(f"ERROR: TMDB search failed: {search_response.text}")
+            return jsonify({'error': 'Failed to search movies'}), 502
+
+        search_data = search_response.json()
+        results = search_data.get('results', [])
+
+        # Filter and format results with streaming information
+        movies = []
+        for movie in results[:8]:  # Limit to top 8 results for better performance
+            if movie.get('poster_path') and movie.get('vote_count', 0) >= 50:
+                movie_id = movie['id']
+
+                # Get streaming providers for this movie in the UK
+                providers_url = f"https://api.themoviedb.org/3/movie/{movie_id}/watch/providers?api_key={API_KEY}"
+                providers_response = requests.get(providers_url, timeout=10)
+
+                streaming_providers = []
+                if providers_response.status_code == 200:
+                    providers_data = providers_response.json()
+                    uk_providers = providers_data.get('results', {}).get('GB', {})
+
+                    # Get flatrate (subscription) providers
+                    flatrate = uk_providers.get('flatrate', [])
+                    for provider in flatrate:
+                        provider_name = provider.get('provider_name', '')
+                        if provider_name in ['Netflix', 'Amazon Prime Video', 'Disney+', 'Paramount+', 'Apple TV+', 'Shudder']:
+                            streaming_providers.append(provider_name)
+
+                movies.append({
+                    'id': movie['id'],
+                    'title': movie['title'],
+                    'release_date': movie.get('release_date', ''),
+                    'poster_path': movie.get('poster_path', ''),
+                    'vote_average': movie.get('vote_average', 0),
+                    'overview': movie.get('overview', '')[:300] + '...' if len(movie.get('overview', '')) > 300 else movie.get('overview', ''),
+                    'streaming_providers': streaming_providers
+                })
+
+        print(f"DEBUG: Found {len(movies)} movies with streaming info for query: {query}")
+        return jsonify({'movies': movies})
+
+    except Exception as e:
+        print(f"ERROR: Exception during where to watch search: {str(e)}")
         return jsonify({'error': 'Search failed'}), 500
 
 @app.route('/movie/<int:movie_id>')

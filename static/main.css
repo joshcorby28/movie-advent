@@ -96,11 +96,11 @@ button:hover {
   gap: 35px;
   max-width: 1400px;
   margin: 0 auto 50px auto;
-  grid-template-columns: repeat(6, 1fr); /* Desktop */
+  grid-template-columns: repeat(6, 1fr); /* Desktop: 1025px+ */
 }
 
-/* Tablet: between 701px and 1200px */
-@media (min-width: 701px) and (max-width: 1200px) {
+/* Tablet: 701px to 1024px */
+@media (min-width: 701px) and (max-width: 1024px) {
   .calendar {
     grid-template-columns: repeat(4, 1fr);
     margin: 0 20px 40px 20px;
@@ -416,4 +416,62 @@ input:checked + .slider:before {
     background: #fff;
     border-radius: 10px;
     transition: width 0.2s;
+}
+
+/* Where to Watch Modal Styles */
+#whereToWatchModal .modal-content {
+    background: #fff;
+    color: #1b1b1b;
+    border: 1px solid #888;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+#whereToWatchModal .close {
+    color: #aaa;
+}
+
+#whereToWatchModal .close:hover {
+    color: #000;
+}
+
+#whereToWatchModal input {
+    background: #fff;
+    border: 1px solid #ccc;
+    color: #1b1b1b;
+}
+
+#whereToWatchModal input::placeholder {
+    color: #666;
+}
+
+#whereToWatchModal button {
+    background: #1b1b1b;
+    color: #fff;
+    border: 1px solid #1b1b1b;
+}
+
+#whereToWatchModal button:hover {
+    background: #3c3c3c;
+    border-color: #3c3c3c;
+}
+
+.where-to-watch-item {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.where-to-watch-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(255, 255, 255, 0.1);
+}
+
+/* Streaming provider badges */
+.where-to-watch-item span[style*="background: #1b1b1b"] {
+    background: linear-gradient(135deg, #1b1b1b, #3c3c3c) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    transition: all 0.2s ease;
+}
+
+.where-to-watch-item span[style*="background: #1b1b1b"]:hover {
+    background: linear-gradient(135deg, #3c3c3c, #1b1b1b) !important;
+    transform: scale(1.05);
 }

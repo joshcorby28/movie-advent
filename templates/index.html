@@ -8,6 +8,7 @@
 <body style="padding-top: 60px;">
 
 <header style="position: fixed; top: 0; right: 0; padding: 10px; background: rgba(0,0,0,0.5); border-radius: 0 0 0 10px; z-index: 1000;">
+    <button id="whereToWatchBtn" style="background: #1b1b1b; color: #f5f5f5; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; margin-right: 15px; font-size: 14px;">🎬 Where to Watch</button>
     {% if user.is_authenticated %}
         <span style="color: #f5f5f5; margin-right: 10px;">Welcome, {{ user.username }}!</span>
         <a href="{{ url_for('my_lists') }}" style="color: #f5f5f5; text-decoration: none; margin-right: 10px;">My Lists</a>
@@ -160,6 +161,22 @@
     </div>
 </div>
 
+<div id="whereToWatchModal" class="modal">
+    <div class="modal-content" style="text-align: center; max-width: 900px;">
+        <span class="close" id="whereToWatchModalClose">&times;</span>
+        <h2>🎬 Where to Watch</h2>
+        <p style="color: #666; margin-bottom: 20px;">Search for any movie to see where it's available to stream in the UK</p>
+
+        <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 20px;">
+            <input type="text" id="whereToWatchSearchInput" placeholder="Enter movie name..." style="width: 60%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;">
+            <button id="whereToWatchSearchBtn" style="padding: 12px 20px; background: #1b1b1b; color: white; border: none; border-radius: 5px; cursor: pointer;">Search</button>
+        </div>
+
+        <div id="whereToWatchLoading" style="display: none; margin: 20px 0;">Searching for streaming information...</div>
+        <div id="whereToWatchResults" style="max-height: 500px; overflow-y: auto; text-align: left;"></div>
+    </div>
+</div>
+
 <script>
 const isAuthenticated = {{ user.is_authenticated | tojson }};
 const form = document.getElementById('movieForm');
@@ -194,6 +211,14 @@ const movieSearchInput = document.getElementById('movieSearchInput');
 const movieSearchBtn = document.getElementById('movieSearchBtn');
 const searchResults = document.getElementById('searchResults');
 const searchLoading = document.getElementById('searchLoading');
+
+// Where to Watch modal elements
+const whereToWatchModal = document.getElementById('whereToWatchModal');
+const whereToWatchModalClose = document.getElementById('whereToWatchModalClose');
+const whereToWatchSearchInput = document.getElementById('whereToWatchSearchInput');
+const whereToWatchSearchBtn = document.getElementById('whereToWatchSearchBtn');
+const whereToWatchResults = document.getElementById('whereToWatchResults');
+const whereToWatchLoading = document.getElementById('whereToWatchLoading');
 
 form.addEventListener('submit', function(e){
     e.preventDefault();  // Prevent normal form POST
@@ -333,6 +358,9 @@ window.onclick = function(event) {
     if (event.target == searchModal) {
         searchModal.style.display = 'none';
     }
+    if (event.target == whereToWatchModal) {
+        whereToWatchModal.style.display = 'none';
+    }
 }
 messageModalClose.onclick = function() {
     messageModal.style.display = 'none';
@@ -342,6 +370,9 @@ movieModalClose.onclick = function() {
 }
 searchModalClose.onclick = function() {
     searchModal.style.display = 'none';
+}
+whereToWatchModalClose.onclick = function() {
+    whereToWatchModal.style.display = 'none';
 }
 
 function showMessage(title, text, onOK, onCancel) {
@@ -610,6 +641,104 @@ movieSearchInput.addEventListener('keypress', function(e) {
         const query = this.value.trim();
         if (query) {
             searchMovies(query);
+        }
+    }
+});
+
+// Where to Watch button functionality
+document.getElementById('whereToWatchBtn').addEventListener('click', function() {
+    whereToWatchModal.style.display = 'block';
+    whereToWatchSearchInput.focus();
+});
+
+// Where to Watch search functionality
+function searchWhereToWatch(query) {
+    whereToWatchLoading.style.display = 'block';
+    whereToWatchResults.innerHTML = '';
+
+    fetch(`/search_movies_where_to_watch?query=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+            whereToWatchLoading.style.display = 'none';
+            console.log('Where to Watch response:', data);
+
+            if (data.error) {
+                whereToWatchResults.innerHTML = `<p style="color: red;">Error: ${data.error}</p>`;
+                return;
+            }
+
+            if (!data.movies || data.movies.length === 0) {
+                whereToWatchResults.innerHTML = '<p>No movies found. Try a different search term.</p>';
+                return;
+            }
+
+            whereToWatchResults.innerHTML = '';
+
+            data.movies.forEach((movie, index) => {
+                const movieDiv = document.createElement('div');
+                movieDiv.className = 'where-to-watch-item';
+                movieDiv.style.cssText = `
+                    display: flex;
+                    align-items: center;
+                    padding: 20px;
+                    margin: 15px 0;
+                    border: 1px solid #ddd;
+                    border-radius: 10px;
+                    background: rgba(255, 255, 255, 0.05);
+                `;
+
+                const posterUrl = movie.poster_path
+                    ? `https://image.tmdb.org/t/p/w200${movie.poster_path}`
+                    : '/static/placeholder.jpg';
+
+                const streamingProviders = movie.streaming_providers || [];
+                const providersHtml = streamingProviders.length > 0
+                    ? `<div style="margin-top: 10px;">
+                        <strong>Available on:</strong><br>
+                        ${streamingProviders.map(provider => `<span style="display: inline-block; background: #1b1b1b; color: white; padding: 4px 8px; margin: 2px 4px 2px 0; border-radius: 4px; font-size: 0.8em;">${provider}</span>`).join('')}
+                       </div>`
+                    : '<div style="margin-top: 10px; color: #888;"><em>Not available on major UK streaming platforms</em></div>';
+
+                movieDiv.innerHTML = `
+                    <img src="${posterUrl}"
+                         alt="${movie.title}"
+                         style="width: 80px; height: 120px; object-fit: cover; border-radius: 5px; margin-right: 20px;"
+                         onerror="this.src='/static/placeholder.jpg'">
+                    <div style="flex: 1;">
+                        <div style="font-weight: bold; font-size: 1.2em; margin-bottom: 8px;">${movie.title}</div>
+                        <div style="color: #666; font-size: 0.9em; margin-bottom: 5px;">
+                            ${movie.release_date ? new Date(movie.release_date).getFullYear() : 'Unknown Year'} •
+                            Rating: ${movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A'}/10
+                        </div>
+                        <div style="color: #888; font-size: 0.9em; margin-bottom: 8px; line-height: 1.4;">
+                            ${movie.overview || 'No description available.'}
+                        </div>
+                        ${providersHtml}
+                    </div>
+                `;
+
+                whereToWatchResults.appendChild(movieDiv);
+            });
+        })
+        .catch(error => {
+            whereToWatchLoading.style.display = 'none';
+            whereToWatchResults.innerHTML = `<p style="color: red;">Error searching for streaming information: ${error.message}</p>`;
+        });
+}
+
+// Where to Watch search button functionality
+whereToWatchSearchBtn.addEventListener('click', function() {
+    const query = whereToWatchSearchInput.value.trim();
+    if (query) {
+        searchWhereToWatch(query);
+    }
+});
+
+whereToWatchSearchInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        const query = this.value.trim();
+        if (query) {
+            searchWhereToWatch(query);
         }
     }
 });
