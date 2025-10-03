@@ -140,7 +140,7 @@ def get_theme_keywords(theme):
     
     # For Christmas, use specific keywords too
     elif theme == "Christmas":
-        specific_keywords = ["christmas", "santa claus", "holiday", "xmas"]
+        specific_keywords = ["christmas", "holiday"]  # Using both christmas and holiday as requested
         keyword_ids = []
         
         for kw in specific_keywords:
@@ -236,6 +236,7 @@ def fetch_streaming_movies(theme, min_count, category="all", genre=None, year_fr
                     continue
 
                 movies.append({
+                    "id": movie["id"],
                     "title": movie["title"],
                     "release_date": movie.get("release_date", "Unknown"),
                     "poster_path": movie.get("poster_path"),
@@ -322,9 +323,11 @@ def fetch_streaming_movies(theme, min_count, category="all", genre=None, year_fr
                     continue
 
                 movies.append({
+                    "id": movie["id"],
                     "title": movie["title"],
                     "release_date": movie.get("release_date", "Unknown"),
                     "poster_path": movie.get("poster_path"),
+                    "vote_average": movie.get("vote_average", 0),
                     "providers": [UK_SERVICE_NAMES.get(int(sid), sid) for sid in selected_services]
                 })
                 seen_ids.add(movie_id)
@@ -352,25 +355,48 @@ def get_movies():
     theme_input = data.get("theme", "")
     category = data.get("category", "all")
 
-    if theme_input:
-        theme = theme_input
-        min_count = 31  # Fixed for theme selection
-        display_month = f"Theme: {theme}"
-    else:
+    # Determine theme and day count based on selections
+    if month_name:
         try:
             month_number = datetime.strptime(month_name, "%B").month
             print(f"Parsed month: {month_name} to {month_number}")
+            days_in_month = monthrange(datetime.now().year, month_number)[1]
+
+            # If theme is also selected, use it; otherwise use month-based theme
+            if theme_input:
+                theme = theme_input
+                display_month = f"{month_name} - Theme: {theme}"
+            else:
+                theme = MONTH_THEME_MAP.get(month_number, "Movies")
+                display_month = month_name
+
+            min_count = days_in_month
         except Exception as e:
             print(f"Error parsing month: {e}")
             month_number = datetime.now().month
+            days_in_month = monthrange(datetime.now().year, month_number)[1]
 
-        days_in_month = monthrange(datetime.now().year, month_number)[1]
-        theme = MONTH_THEME_MAP.get(month_number, "Movies")
-        min_count = days_in_month
-        display_month = month_name or "Current Month"
+            if theme_input:
+                theme = theme_input
+                display_month = f"Current Month - Theme: {theme}"
+            else:
+                theme = MONTH_THEME_MAP.get(month_number, "Movies")
+                display_month = "Current Month"
+
+            min_count = days_in_month
+    else:
+        # No month selected - use theme with default 31 days
+        theme = theme_input if theme_input else "Movies"
+        min_count = 31
+        display_month = f"Theme: {theme}" if theme_input else "General Movies"
 
     genre_input = data.get("genre", "")
-    genre = genre_input if genre_input else None
+    # Default to Family genre for Christmas unless user specifies otherwise
+    if theme == "Christmas" and not genre_input:
+        genre = "10751"  # Family genre
+        print(f"Defaulting Christmas theme to Family genre (10751)")
+    else:
+        genre = genre_input if genre_input else None
     year_from = data.get("year_from", "")
     year_to = data.get("year_to", "")
     print(f"Fetching movies for theme: {theme}, genre: {genre}, year_from: {year_from}, year_to: {year_to}, min_count: {min_count}, category: {category}")
@@ -450,6 +476,7 @@ def fetch_single_replacement_movie(theme, category, genre, year_from, year_to, e
 
         # Movie is already filtered by streaming services in discover endpoint
         return {
+            "id": movie["id"],
             "title": movie["title"],
             "release_date": movie.get("release_date", "Unknown"),
             "providers": [UK_SERVICE_NAMES.get(int(sid), sid) for sid in selected_services],
@@ -472,14 +499,31 @@ def get_replacement_movie():
     print(f"Exclude titles: {exclude_titles}")
 
     genre = genre_input if genre_input else None
-    if theme_input:
-        theme = theme_input
+
+    # Apply Christmas Family genre default if needed
+    if not genre_input:
+        if month_name and not theme_input:
+            try:
+                month_number = datetime.strptime(month_name, "%B").month
+                theme = MONTH_THEME_MAP.get(month_number, "Movies")
+                if theme == "Christmas":
+                    genre = "10751"  # Family genre
+            except Exception as e:
+                month_number = datetime.now().month
+                theme = MONTH_THEME_MAP.get(month_number, "Movies")
+        else:
+            theme = theme_input if theme_input else "Movies"
+            if theme == "Christmas":
+                genre = "10751"  # Family genre
     else:
-        try:
-            month_number = datetime.strptime(month_name, "%B").month
-        except Exception as e:
-            month_number = datetime.now().month
-        theme = MONTH_THEME_MAP.get(month_number, "Movies")
+        if month_name and not theme_input:
+            try:
+                month_number = datetime.strptime(month_name, "%B").month
+            except Exception as e:
+                month_number = datetime.now().month
+            theme = MONTH_THEME_MAP.get(month_number, "Movies")
+        else:
+            theme = theme_input if theme_input else "Movies"
 
     only_streaming = data.get('only_streaming', True)
     selected_services = data.get('services', ['8','9','337'])
@@ -522,10 +566,184 @@ def delete_list():
     else:
         return jsonify({'error': 'List not found'}), 404
 
+@app.route('/test_tmdb_api')
+def test_tmdb_api():
+    """Test endpoint to check TMDB API connectivity"""
+    try:
+        print("DEBUG: Testing TMDB API connectivity...")
+
+        # Test with a known movie ID (The Dark Knight)
+        test_movie_id = 155
+        url = f"https://api.themoviedb.org/3/movie/{test_movie_id}?api_key={API_KEY}&language=en-US"
+        print(f"DEBUG: Test URL: {url}")
+
+        response = requests.get(url, timeout=10)
+        print(f"DEBUG: Test response status: {response.status_code}")
+        print(f"DEBUG: Test response headers: {dict(response.headers)}")
+
+        if response.status_code == 200:
+            data = response.json()
+            print(f"DEBUG: Test successful - Movie: {data.get('title', 'Unknown')}")
+            return jsonify({
+                'status': 'success',
+                'movie_title': data.get('title'),
+                'api_key_valid': True,
+                'response_time_ms': response.elapsed.total_seconds() * 1000
+            })
+        elif response.status_code == 401:
+            print("ERROR: Invalid API key")
+            return jsonify({
+                'status': 'error',
+                'error': 'Invalid API key',
+                'api_key_valid': False
+            }), 401
+        elif response.status_code == 429:
+            print("ERROR: Rate limited")
+            return jsonify({
+                'status': 'error',
+                'error': 'Rate limited by TMDB API',
+                'api_key_valid': True
+            }), 429
+        else:
+            print(f"ERROR: Unexpected response: {response.status_code}")
+            print(f"ERROR: Response text: {response.text}")
+            return jsonify({
+                'status': 'error',
+                'error': f'Unexpected response: {response.status_code}',
+                'response_text': response.text,
+                'api_key_valid': True
+            }), response.status_code
+
+    except Exception as e:
+        print(f"ERROR: Exception during TMDB API test: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'error': f'Exception: {str(e)}',
+            'api_key_valid': None
+        }), 500
+
+@app.route('/search_movies')
+def search_movies():
+    """Search for movies using TMDB API"""
+    try:
+        query = request.args.get('query', '').strip()
+        if not query:
+            return jsonify({'error': 'No search query provided'}), 400
+
+        print(f"DEBUG: Searching for movies with query: {query}")
+
+        url = (
+            f"https://api.themoviedb.org/3/search/movie?"
+            f"api_key={API_KEY}&language=en-US&region=GB"
+            f"&query={requests.utils.quote(query)}"
+            f"&include_adult=false&with_watch_providers=8|9|337"
+            f"&watch_region=GB&page=1"
+        )
+
+        response = requests.get(url, timeout=10)
+        print(f"DEBUG: TMDB search response status: {response.status_code}")
+
+        if response.status_code != 200:
+            print(f"ERROR: TMDB search failed: {response.text}")
+            return jsonify({'error': 'Failed to search movies'}), 502
+
+        data = response.json()
+        results = data.get('results', [])
+
+        # Filter and format results
+        movies = []
+        for movie in results[:10]:  # Limit to top 10 results
+            if movie.get('poster_path') and movie.get('vote_count', 0) >= 50:  # Only include movies with posters and decent vote count
+                movies.append({
+                    'id': movie['id'],
+                    'title': movie['title'],
+                    'release_date': movie.get('release_date', ''),
+                    'poster_path': movie.get('poster_path', ''),
+                    'vote_average': movie.get('vote_average', 0),
+                    'overview': movie.get('overview', '')[:200] + '...' if len(movie.get('overview', '')) > 200 else movie.get('overview', '')
+                })
+
+        print(f"DEBUG: Found {len(movies)} movies for query: {query}")
+        return jsonify({'movies': movies})
+
+    except Exception as e:
+        print(f"ERROR: Exception during movie search: {str(e)}")
+        return jsonify({'error': 'Search failed'}), 500
+
+@app.route('/movie/<int:movie_id>')
+def get_movie_details(movie_id):
+    """Fetch detailed movie information from TMDB API"""
+    try:
+        url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key={API_KEY}&language=en-US"
+        print(f"DEBUG: Requesting movie details for ID {movie_id} from URL: {url}")
+
+        response = requests.get(url, timeout=10)
+        print(f"DEBUG: TMDB API response status: {response.status_code}")
+        print(f"DEBUG: TMDB API response headers: {dict(response.headers)}")
+
+        if response.status_code != 200:
+            print(f"ERROR: Failed to fetch movie details for ID {movie_id}")
+            print(f"ERROR: Response status: {response.status_code}")
+            print(f"ERROR: Response text: {response.text}")
+            print(f"ERROR: Response headers: {dict(response.headers)}")
+            return jsonify({'error': 'Movie details not found'}), 404
+
+        movie_data = response.json()
+        print(f"DEBUG: Successfully fetched movie data for ID {movie_id}")
+        print(f"DEBUG: Movie title: {movie_data.get('title', 'Unknown')}")
+        print(f"DEBUG: Overview length: {len(movie_data.get('overview', ''))}")
+        print(f"DEBUG: Available keys in response: {list(movie_data.keys())}")
+
+        # Format the movie details for frontend
+        overview = movie_data.get('overview', '').strip()
+        if not overview:
+            print(f"WARNING: No overview found for movie ID {movie_id}: {movie_data.get('title', 'Unknown')}")
+            overview = 'No plot information available for this movie.'
+        elif len(overview) < 50:
+            print(f"WARNING: Very short overview for movie ID {movie_id}: {movie_data.get('title', 'Unknown')} - '{overview}'")
+
+        movie_details = {
+            'title': movie_data.get('title', 'Unknown Title'),
+            'overview': overview,
+            'plot': overview,  # Alternative field name for compatibility
+            'release_date': movie_data.get('release_date', ''),
+            'vote_average': movie_data.get('vote_average', 0),
+            'runtime': movie_data.get('runtime', 0),
+            'genres': [genre['name'] for genre in movie_data.get('genres', [])],
+            'poster_path': movie_data.get('poster_path', ''),
+            'backdrop_path': movie_data.get('backdrop_path', ''),
+            'imdb_id': movie_data.get('imdb_id', ''),
+            'original_language': movie_data.get('original_language', ''),
+            'production_countries': [country['name'] for country in movie_data.get('production_countries', [])],
+            'tagline': movie_data.get('tagline', ''),
+            'status': movie_data.get('status', 'Unknown')
+        }
+
+        print(f"DEBUG: Returning movie details for: {movie_details['title']}")
+        return jsonify(movie_details)
+
+    except requests.exceptions.Timeout:
+        print(f"ERROR: Timeout fetching movie details for ID {movie_id}")
+        return jsonify({'error': 'Request timeout - TMDB API unavailable'}), 504
+    except requests.exceptions.ConnectionError as e:
+        print(f"ERROR: Connection error fetching movie details for ID {movie_id}: {str(e)}")
+        return jsonify({'error': 'Connection error - Cannot reach TMDB API'}), 502
+    except requests.exceptions.HTTPError as e:
+        print(f"ERROR: HTTP error fetching movie details for ID {movie_id}: {str(e)}")
+        return jsonify({'error': 'HTTP error communicating with TMDB API'}), 502
+    except requests.exceptions.RequestException as e:
+        print(f"ERROR: Request exception fetching movie details for ID {movie_id}: {str(e)}")
+        return jsonify({'error': 'Network error communicating with TMDB API'}), 502
+    except Exception as e:
+        print(f"ERROR: Unexpected error fetching movie details for ID {movie_id}: {str(e)}")
+        print(f"ERROR: Exception type: {type(e).__name__}")
+        return jsonify({'error': 'Failed to fetch movie details'}), 500
+
 
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
         logging.info("Database tables created")
-    logging.info("About to start the server on host 0.0.0.0, port %s", os.environ.get('PORT', 5001))
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5001)), debug=True)
+    port = int(os.environ.get('PORT', 5002))  # Changed default port to 5002
+    logging.info("About to start the server on host 0.0.0.0, port %s", port)
+    app.run(host='0.0.0.0', port=port, debug=True)

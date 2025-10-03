@@ -27,7 +27,21 @@
         <input type="checkbox" id="toggle-advanced">
         <span class="slider"></span>
     </label>
-    <input type="text" name="month" placeholder="October">
+    <select name="month" id="monthSelect">
+        <option value="">Select Month</option>
+        <option value="January">January (31 days)</option>
+        <option value="February">February (28 days)</option>
+        <option value="March">March (31 days)</option>
+        <option value="April">April (30 days)</option>
+        <option value="May">May (31 days)</option>
+        <option value="June">June (30 days)</option>
+        <option value="July">July (31 days)</option>
+        <option value="August">August (31 days)</option>
+        <option value="September">September (30 days)</option>
+        <option value="October">October (31 days)</option>
+        <option value="November">November (30 days)</option>
+        <option value="December">December (31 days)</option>
+    </select>
     <select name="theme">
         <option value="">Use Month Theme</option>
         <option value="Halloween">Halloween</option>
@@ -121,6 +135,31 @@
     </div>
 </div>
 
+<div id="searchModal" class="modal">
+    <div class="modal-content" style="text-align: center; max-width: 800px;">
+        <span class="close" id="searchModalClose">&times;</span>
+        <h2>Search for a Movie</h2>
+        <input type="text" id="movieSearchInput" placeholder="Enter movie name..." style="width: 80%; padding: 12px; margin: 20px 0; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;">
+        <button id="movieSearchBtn" style="padding: 12px 20px; background: #1b1b1b; color: white; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px;">Search</button>
+        <div id="searchLoading" style="display: none; margin: 20px 0;">Searching...</div>
+        <div id="searchResults" style="max-height: 400px; overflow-y: auto; text-align: left; margin-top: 20px;"></div>
+    </div>
+</div>
+
+<div id="movieModal" class="modal">
+    <div class="modal-content">
+        <span class="close" id="movieModalClose">&times;</span>
+        <div class="movie-poster-container">
+            <img id="movieModalPoster" src="" alt="Movie Poster">
+        </div>
+        <div class="movie-details">
+            <h2 id="movieModalTitle"></h2>
+            <p id="movieModalPlot"></p>
+            <div id="movieModalMeta"></div>
+        </div>
+    </div>
+</div>
+
 <script>
 const isAuthenticated = {{ user.is_authenticated | tojson }};
 const form = document.getElementById('movieForm');
@@ -139,6 +178,22 @@ const messageText = document.getElementById('messageText');
 const messageOK = document.getElementById('messageOK');
 const messageCancel = document.getElementById('messageCancel');
 const messageModalClose = document.getElementById('messageModalClose');
+
+// Movie modal elements
+const movieModal = document.getElementById('movieModal');
+const movieModalTitle = document.getElementById('movieModalTitle');
+const movieModalPoster = document.getElementById('movieModalPoster');
+const movieModalPlot = document.getElementById('movieModalPlot');
+const movieModalMeta = document.getElementById('movieModalMeta');
+const movieModalClose = document.getElementById('movieModalClose');
+
+// Search modal elements
+const searchModal = document.getElementById('searchModal');
+const searchModalClose = document.getElementById('searchModalClose');
+const movieSearchInput = document.getElementById('movieSearchInput');
+const movieSearchBtn = document.getElementById('movieSearchBtn');
+const searchResults = document.getElementById('searchResults');
+const searchLoading = document.getElementById('searchLoading');
 
 form.addEventListener('submit', function(e){
     e.preventDefault();  // Prevent normal form POST
@@ -196,6 +251,17 @@ form.addEventListener('submit', function(e){
 
         movieTitle.innerText = result.message || "Get the popcorn and enjoy";
 
+        // Add month day count if a month was selected (show above the main title)
+        if (selectedMonth && monthDays[selectedMonth] !== undefined) {
+            const dayCountSpan = document.createElement('div');
+            dayCountSpan.style.color = '#ccc';
+            dayCountSpan.style.fontSize = '0.9em';
+            dayCountSpan.style.marginBottom = '10px';
+            dayCountSpan.textContent = `${monthDays[selectedMonth]} days of movies`;
+            movieTitle.insertBefore(dayCountSpan, movieTitle.firstChild);
+        }
+
+
         let progress = 0;
         const increment = 100 / movies.length;
 
@@ -206,9 +272,10 @@ form.addEventListener('submit', function(e){
             div.classList.add('day');
             let posterHtml = '';
             if (movie.poster_path) {
-                posterHtml = `<div class="poster-container">
-                    <img src="https://image.tmdb.org/t/p/w200${movie.poster_path}" alt="${movie.title} poster" style="width:100%; max-height: 300px; height:100%;">
+                posterHtml = `<div class="poster-container" style="position: relative;">
+                    <img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.title} poster" style="width:100%; max-height: 300px; height:100%;">
                     <div class="poster-number">${i + 1}</div>
+                    <div class="info-icon" data-movie-index="${i}" data-movie-title="${movie.title}" data-movie-id="${movie.id}" data-movie-poster="https://image.tmdb.org/t/p/original${movie.poster_path}" style="position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border-radius: 50%; background:#fff; color: #1b1b1b; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; font-weight: bold; z-index: 0;">i</div>
                 </div>`;
             } else {
                 posterHtml = `<div class="poster-number">${i + 1}</div>`;
@@ -260,9 +327,21 @@ window.onclick = function(event) {
     if (event.target == messageModal) {
         messageModal.style.display = 'none';
     }
+    if (event.target == movieModal) {
+        movieModal.style.display = 'none';
+    }
+    if (event.target == searchModal) {
+        searchModal.style.display = 'none';
+    }
 }
 messageModalClose.onclick = function() {
     messageModal.style.display = 'none';
+}
+movieModalClose.onclick = function() {
+    movieModal.style.display = 'none';
+}
+searchModalClose.onclick = function() {
+    searchModal.style.display = 'none';
 }
 
 function showMessage(title, text, onOK, onCancel) {
@@ -295,82 +374,277 @@ closeDrawer.addEventListener('click', function() {
     advancedOptions.style.left = '-300px';
 });
 
-// Replace movie functionality
+// Search functionality
+function searchMovies(query) {
+    searchLoading.style.display = 'block';
+    searchResults.innerHTML = '';
+
+    fetch(`/search_movies?query=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+            searchLoading.style.display = 'none';
+            console.log('Search response:', data);
+
+            if (data.error) {
+                searchResults.innerHTML = `<p style="color: red;">Error: ${data.error}</p>`;
+                return;
+            }
+
+            if (!data.movies || data.movies.length === 0) {
+                searchResults.innerHTML = '<p>No movies found. Try a different search term.</p>';
+                return;
+            }
+
+            searchResults.innerHTML = ''; // Clear previous results
+
+            data.movies.forEach((movie, index) => {
+                console.log(`Processing movie ${index + 1}:`, movie);
+
+                const movieDiv = document.createElement('div');
+                movieDiv.className = 'search-result-item';
+                movieDiv.style.cssText = `
+                    display: flex;
+                    align-items: center;
+                    padding: 15px;
+                    margin: 10px 0;
+                    border: 1px solid #ddd;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    transition: background-color 0.2s;
+                `;
+
+                movieDiv.onmouseover = () => movieDiv.style.backgroundColor = '#f5f5f5';
+                movieDiv.onmouseout = () => movieDiv.style.backgroundColor = 'transparent';
+
+                // Properly escape the JSON data for HTML attribute - use single quotes for HTML attribute
+                const movieData = encodeURIComponent(JSON.stringify(movie));
+                console.log(`Movie data for button: ${movieData.substring(0, 100)}...`);
+
+                movieDiv.innerHTML = `
+                    <img src="https://image.tmdb.org/t/p/w200${movie.poster_path}"
+                         alt="${movie.title.replace(/"/g, '"')}"
+                         style="width: 60px; height: 90px; object-fit: cover; border-radius: 5px; margin-right: 15px;"
+                         onerror="this.src='/static/placeholder.jpg'">
+                    <div style="flex: 1;">
+                        <div style="font-weight: bold; font-size: 1.1em; margin-bottom: 5px;">${movie.title.replace(/</g, '<').replace(/>/g, '>')}</div>
+                        <div style="color: #666; font-size: 0.9em;">${movie.release_date ? new Date(movie.release_date).getFullYear() : 'Unknown Year'}</div>
+                        <div style="color: #888; font-size: 0.8em; margin-top: 3px;">Rating: ${movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A'}/10</div>
+                    </div>
+                        <button 
+                        class="select-movie-btn" 
+                        data-movie="${movieData}"
+                        style="padding: 8px 16px; background: #1b1b1b; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                        Select
+                        </button>
+
+                `;
+
+                searchResults.appendChild(movieDiv);
+            });
+
+            // Add event listeners for select buttons after they're created
+            const selectButtons = document.querySelectorAll('.select-movie-btn');
+            console.log('Found select buttons:', selectButtons.length);
+
+            selectButtons.forEach((btn, index) => {
+                console.log(`Adding event listener to button ${index + 1}`);
+                console.log('Button element:', btn);
+                console.log('Button data-movie:', btn.getAttribute('data-movie'));
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('=== SELECT BUTTON CLICKED ===');
+                    console.log('Button element:', this);
+                    console.log('Button data-movie attribute:', this.getAttribute('data-movie'));
+                    console.log('Search modal display:', searchModal.style.display);
+
+                    try {
+                        const movieData = this.getAttribute('data-movie');
+                        if (!movieData) {
+                            console.error('No movie data found in button');
+                            alert('Error: No movie data found in button');
+                            return;
+                        }
+
+                        console.log('Raw movie data length:', movieData.length);
+                        console.log('Raw movie data preview:', movieData.substring(0, 200) + '...');
+
+                        const movie = JSON.parse(decodeURIComponent(movieData));
+                        console.log('Successfully parsed movie:', movie);
+                        console.log('Movie title:', movie.title);
+                        selectMovieForReplacement(movie);
+                    } catch (error) {
+                        console.error('Error parsing movie data:', error);
+                        console.error('Raw data was:', this.getAttribute('data-movie'));
+                        alert('Error parsing movie data: ' + error.message);
+                    }
+                });
+            });
+        })
+        .catch(error => {
+            searchLoading.style.display = 'none';
+            searchResults.innerHTML = `<p style="color: red;">Error searching movies: ${error.message}</p>`;
+        });
+}
+
+function selectMovieForReplacement(movie) {
+    console.log('=== SELECT MOVIE FOR REPLACEMENT CALLED ===');
+    console.log('Movie to replace with:', movie);
+    console.log('Movie title:', movie.title);
+
+    // Close search modal
+    console.log('Closing search modal...');
+    searchModal.style.display = 'none';
+    console.log('Search modal display set to:', searchModal.style.display);
+
+    // Find the replace button that opened the search
+    console.log('Looking for active replace button with class "replace-btn.search-active"');
+    const activeReplaceBtn = document.querySelector('.replace-btn.search-active');
+    console.log('Active replace button found:', activeReplaceBtn);
+
+    if (!activeReplaceBtn) {
+        console.error('No active replace button found');
+        console.error('Available replace buttons:', document.querySelectorAll('.replace-btn').length);
+        console.error('Buttons with search-active class:', document.querySelectorAll('.search-active').length);
+        alert('Error: Could not find the movie to replace. Please try again.');
+        return;
+    }
+
+    const index = activeReplaceBtn.getAttribute('data-index');
+    console.log('Movie index to replace:', index);
+
+    const card = activeReplaceBtn.closest('.day');
+    console.log('Card element found:', card);
+
+    if (!card) {
+        console.error('No card found for replacement');
+        alert('Error: Could not find the movie card. Please try again.');
+        return;
+    }
+
+    console.log('Replacing movie at index:', index, 'with:', movie.title);
+    console.log('DEBUG: Movie data for replacement:', {
+        id: movie.id,
+        title: movie.title,
+        poster_path: movie.poster_path,
+        hasRequiredData: !!(movie.id && movie.poster_path)
+    });
+
+    // Update the card with selected movie
+    card.innerHTML = '';
+
+    let posterElement;
+    if (movie.poster_path) {
+        const posterContainer = document.createElement('div');
+        posterContainer.className = 'poster-container';
+        posterContainer.style.position = 'relative';
+
+        const img = document.createElement('img');
+        img.src = `https://image.tmdb.org/t/p/w500${movie.poster_path}`;
+        img.alt = `${movie.title} poster`;
+        img.style.width = '100%';
+        img.style.maxHeight = '300px';
+        img.style.height = '100%';
+        posterContainer.appendChild(img);
+
+        const numberDiv = document.createElement('div');
+        numberDiv.className = 'poster-number';
+        numberDiv.textContent = parseInt(index) + 1;
+        posterContainer.appendChild(numberDiv);
+
+        // ADD INFO ICON - This was missing!
+        const infoIcon = document.createElement('div');
+        infoIcon.className = 'info-icon';
+        infoIcon.setAttribute('data-movie-index', index);
+        infoIcon.setAttribute('data-movie-title', movie.title);
+        infoIcon.setAttribute('data-movie-id', movie.id);
+        infoIcon.setAttribute('data-movie-poster', `https://image.tmdb.org/t/p/original${movie.poster_path}`);
+        infoIcon.style.cssText = 'position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border-radius: 50%; background:#fff; color: #1b1b1b; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; font-weight: bold; z-index: 0;';
+        infoIcon.textContent = 'i';
+        posterContainer.appendChild(infoIcon);
+
+        console.log('DEBUG: Added info icon to replaced movie:', movie.title);
+        posterElement = posterContainer;
+    } else {
+        const numberDiv = document.createElement('div');
+        numberDiv.className = 'poster-number';
+        numberDiv.textContent = parseInt(index) + 1;
+        posterElement = numberDiv;
+    }
+    card.appendChild(posterElement);
+
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'content';
+    const h3 = document.createElement('h3');
+    h3.textContent = movie.title;
+    contentDiv.appendChild(h3);
+    const streamBtn = document.createElement('button');
+    streamBtn.className = 'stream-btn';
+    streamBtn.setAttribute('data-providers', 'Netflix,Amazon Prime Video,Disney+');
+    streamBtn.setAttribute('data-title', movie.title);
+    streamBtn.textContent = 'Stream Now';
+    contentDiv.appendChild(streamBtn);
+    const newReplaceBtn = document.createElement('button');
+    newReplaceBtn.className = 'replace-btn';
+    newReplaceBtn.setAttribute('data-index', index);
+    newReplaceBtn.textContent = 'Replace Movie';
+    contentDiv.appendChild(newReplaceBtn);
+    card.appendChild(contentDiv);
+
+    // Remove search-active class
+    activeReplaceBtn.classList.remove('search-active');
+
+    console.log('Movie replacement completed successfully');
+}
+
+// Search button functionality
+movieSearchBtn.addEventListener('click', function() {
+    const query = movieSearchInput.value.trim();
+    if (query) {
+        searchMovies(query);
+    }
+});
+
+movieSearchInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        const query = this.value.trim();
+        if (query) {
+            searchMovies(query);
+        }
+    }
+});
+
+// Replace movie functionality - now opens search modal
 document.addEventListener('click', function(e) {
     if (e.target.classList.contains('replace-btn')) {
+        console.log('=== REPLACE BUTTON CLICKED ===');
+        console.log('Replace button element:', e.target);
+        console.log('Replace button classes:', e.target.classList.toString());
+
         if (!generationData) {
-            alert('Please generate a list first.');
+            console.log('No generation data found, showing message');
+            showMessage('No List Generated', 'Please generate a movie list first.');
             return;
         }
-        const index = e.target.getAttribute('data-index');
-        const allTitles = Array.from(document.querySelectorAll('.day h3')).map(h => h.textContent.trim());
-        const data = { ...generationData, current_titles: allTitles };
 
-        fetch('/get_replacement_movie', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(data)
-        })
-        .then(response => response.json())
-        .then(result => {
-            if (result.movie) {
-                const movie = result.movie;
-                const card = e.target.closest('.day');
-                if (!card) {
-                    console.error('Card not found for replacement');
-                    return;
-                }
-                card.innerHTML = '';
+        // Mark this button as active for search
+        e.target.classList.add('search-active');
+        console.log('Added search-active class to button');
+        console.log('Button classes after adding search-active:', e.target.classList.toString());
+        console.log('Button data-index:', e.target.getAttribute('data-index'));
 
-                let posterElement;
-                if (movie.poster_path) {
-                    const posterContainer = document.createElement('div');
-                    posterContainer.className = 'poster-container';
-                    const img = document.createElement('img');
-                    img.src = `https://image.tmdb.org/t/p/w200${movie.poster_path}`;
-                    img.alt = `${movie.title} poster`;
-                    img.style.width = '100%';
-                    img.style.maxHeight = '300px';
-                    img.style.height = '100%';
-                    posterContainer.appendChild(img);
-                    const numberDiv = document.createElement('div');
-                    numberDiv.className = 'poster-number';
-                    numberDiv.textContent = parseInt(index) + 1;
-                    posterContainer.appendChild(numberDiv);
-                    posterElement = posterContainer;
-                } else {
-                    const numberDiv = document.createElement('div');
-                    numberDiv.className = 'poster-number';
-                    numberDiv.textContent = parseInt(index) + 1;
-                    posterElement = numberDiv;
-                }
-                card.appendChild(posterElement);
+        console.log('Search modal element:', searchModal);
+        console.log('Search modal display before:', searchModal.style.display);
 
-                const contentDiv = document.createElement('div');
-                contentDiv.className = 'content';
-                const h3 = document.createElement('h3');
-                h3.textContent = movie.title;
-                contentDiv.appendChild(h3);
-                const streamBtn = document.createElement('button');
-                streamBtn.className = 'stream-btn';
-                streamBtn.setAttribute('data-providers', movie.providers.join(', '));
-                streamBtn.setAttribute('data-title', movie.title);
-                streamBtn.textContent = 'Stream Now';
-                contentDiv.appendChild(streamBtn);
-                const replaceBtn = document.createElement('button');
-                replaceBtn.className = 'replace-btn';
-                replaceBtn.setAttribute('data-index', index);
-                replaceBtn.textContent = 'Replace Movie';
-                contentDiv.appendChild(replaceBtn);
-                card.appendChild(contentDiv);
-            } else {
-                showMessage('No Replacement', 'No replacement movie found.');
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            showMessage('Error', 'Error replacing movie. Check console for details.');
-        });
+        // Show search modal
+        searchModal.style.display = 'block';
+        console.log('Search modal display set to block');
+        console.log('Search modal display after:', searchModal.style.display);
+
+        movieSearchInput.focus();
+        movieSearchInput.value = ''; // Clear previous search
+
+        console.log('Replace button setup completed');
     }
 });
 
@@ -385,6 +659,93 @@ document.addEventListener('click', function(e) {
             modalProviders.textContent = 'Available on: ' + providers;
         }
         modal.style.display = 'block';
+    }
+});
+
+// Info icon functionality
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('info-icon')) {
+        const title = e.target.getAttribute('data-movie-title');
+        const movieId = e.target.getAttribute('data-movie-id');
+        const poster = e.target.getAttribute('data-movie-poster');
+
+        // Fetch detailed movie information from the backend
+        fetch(`/movie/${movieId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch movie details');
+                }
+                return response.json();
+            })
+            .then(movieDetails => {
+                movieModalTitle.textContent = movieDetails.title || title;
+                movieModalPlot.textContent = movieDetails.overview || movieDetails.plot || 'Plot information is not available for this movie in our database.';
+                movieModalPoster.src = poster;
+                movieModalPoster.alt = `${title} poster`;
+
+                // Add or update rating badge in modal
+                let ratingBadge = document.querySelector('#movieModal .modal-rating-badge');
+                if (!ratingBadge) {
+                    ratingBadge = document.createElement('div');
+                    ratingBadge.className = 'modal-rating-badge';
+                    movieModal.querySelector('.modal-content').appendChild(ratingBadge);
+                }
+                ratingBadge.textContent = movieDetails.vote_average ? movieDetails.vote_average.toFixed(1) : 'N/A';
+
+                // Add movie metadata
+                const year = movieDetails.release_date ? new Date(movieDetails.release_date).getFullYear() : '';
+                const rating = movieDetails.vote_average ? `${movieDetails.vote_average}/10` : '';
+                const runtime = movieDetails.runtime ? `${movieDetails.runtime} min` : '';
+                const genres = movieDetails.genres ? movieDetails.genres.join(', ') : '';
+                const tagline = movieDetails.tagline || '';
+
+                let metaHtml = '<div style="margin-top: 15px; font-size: 0.9em; color: #888;">';
+
+                if (year) metaHtml += `<div><strong>Year:</strong> ${year}</div>`;
+                if (rating) metaHtml += `<div><strong>Rating:</strong> ${rating}</div>`;
+                if (runtime) metaHtml += `<div><strong>Runtime:</strong> ${runtime}</div>`;
+                if (genres) metaHtml += `<div><strong>Genres:</strong> ${genres}</div>`;
+
+                if (!year && !rating && !runtime && !genres && !tagline) {
+                    metaHtml += '<div>Movie details are limited in our database.</div>';
+                }
+
+                metaHtml += '</div>';
+                movieModalMeta.innerHTML = metaHtml;
+
+                movieModal.style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Error fetching movie details:', error);
+                // Enhanced fallback with more helpful information
+                movieModalTitle.textContent = title;
+                movieModalPlot.textContent = 'Unable to load detailed plot information for this movie. This might be due to limited data availability in the movie database.';
+                movieModalPoster.src = poster;
+                movieModalPoster.alt = `${title} poster`;
+
+                // Add rating badge even for fallback (show N/A)
+                let ratingBadge = document.querySelector('#movieModal .modal-rating-badge');
+                if (!ratingBadge) {
+                    ratingBadge = document.createElement('div');
+                    ratingBadge.className = 'modal-rating-badge';
+                    movieModal.querySelector('.modal-content').appendChild(ratingBadge);
+                }
+                ratingBadge.textContent = 'N/A';
+
+                // Provide helpful metadata even when API fails
+                movieModalMeta.innerHTML = `
+                    <div style="margin-top: 15px; font-size: 0.9em; color: #888;">
+                        <div>Movie details could not be loaded from the database.</div>
+                        <div style="margin-top: 10px; color: #666;">
+                            <strong>What you can try:</strong><br>
+                            • Check if the movie has limited information available<br>
+                            • Some older or less popular movies may not have detailed descriptions<br>
+                            • The movie database might be temporarily unavailable
+                        </div>
+                    </div>
+                `;
+                movieModal.style.display = 'block';
+            });
     }
 });
 
@@ -446,7 +807,10 @@ document.getElementById('try-again').addEventListener('click', function() {
             div.classList.add('day');
             let posterHtml = '';
             if (movie.poster_path) {
-                posterHtml = `<img src="https://image.tmdb.org/t/p/w200${movie.poster_path}" alt="${movie.title} poster" style="width:100%;     max-height: 300px; height:100%;">`;
+                posterHtml = `<div class="poster-container" style="position: relative;">
+                    <img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.title} poster" style="width:100%; max-height: 300px; height:100%;">
+                    <div class="info-icon" data-movie-title="${movie.title}" data-movie-id="${movie.id}" data-movie-poster="https://image.tmdb.org/t/p/original${movie.poster_path}" style="position: absolute; top: 5px; right: 5px; width: 20px; height: 20px; border-radius: 50%; background: rgba(0,0,0,0.7); color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; font-weight: bold; z-index: 0;">i</div>
+                </div>`;
             }
             div.innerHTML = `
                 ${posterHtml}
@@ -550,6 +914,23 @@ window.addEventListener('click', function(event) {
         modal.style.display = 'none';
         document.getElementById('listName').value = '';
     }
+});
+
+// Month selection functionality
+const monthSelect = document.getElementById('monthSelect');
+
+// Month days mapping (accounting for leap year - using 28 for February)
+const monthDays = {
+    'January': 31, 'February': 28, 'March': 31, 'April': 30,
+    'May': 31, 'June': 30, 'July': 31, 'August': 31,
+    'September': 30, 'October': 31, 'November': 30, 'December': 31
+};
+
+// Store the selected month for later use
+let selectedMonth = '';
+
+monthSelect.addEventListener('change', function() {
+    selectedMonth = this.value;
 });
 </script>
 
