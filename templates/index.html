@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reel Season</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
@@ -791,12 +792,24 @@ document.addEventListener('click', function(e) {
     }
 });
 
+console.log('=== INFO ICON DEBUG ===');
+console.log('Modal elements check:', {
+    movieModal: movieModal,
+    movieModalTitle: movieModalTitle,
+    movieModalPoster: movieModalPoster,
+    movieModalPlot: movieModalPlot,
+    movieModalMeta: movieModalMeta
+});
+
 // Info icon functionality
 document.addEventListener('click', function(e) {
     if (e.target.classList.contains('info-icon')) {
+        console.log('=== INFO ICON CLICKED ===');
         const title = e.target.getAttribute('data-movie-title');
         const movieId = e.target.getAttribute('data-movie-id');
         const poster = e.target.getAttribute('data-movie-poster');
+
+        console.log('Info icon data:', { title, movieId, poster });
 
         // Fetch detailed movie information from the backend
         fetch(`/movie/${movieId}`)
