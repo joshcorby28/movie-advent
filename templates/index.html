@@ -8,6 +8,9 @@
 </head>
 <body style="padding-top: 60px;">
 
+<!-- Advanced drawer backdrop (mobile only) -->
+<div id="advanced-drawer-backdrop" class="advanced-drawer-backdrop"></div>
+
 <header style="position: fixed; top: 0; right: 0; padding: 10px; background: rgba(0,0,0,0.5); border-radius: 0 0 0 10px; z-index: 1000;">
     <button id="whereToWatchBtn" style="background: #1b1b1b; color: #f5f5f5; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; margin-right: 15px; font-size: 14px;">🎬 Where to Watch</button>
     {% if user.is_authenticated %}
@@ -23,8 +26,11 @@
 <a href="{{ url_for('index') }}" style="text-decoration: none;"><img src="{{ url_for('static', filename='logo.png') }}" alt="Reel Season Logo" style="max-width: 300px; height: auto; margin-bottom: 20px; margin-top: 20px;"></a>
 <p style="text-align: center; margin: 0 0 50px 0; font-size: 1.2em; color: #f5f5f5;">Your calendar of chills, cheers, and cinematic magic.</p>
 
-<form id="movieForm">
-    <span style="margin-right: 10px; font-size: 1.2em;">☰</span>
+<!-- Generate Movies Button (Mobile Only) -->
+<button id="generateMoviesBtn" class="mobile-generate-btn" style="display: none;">🎬 Generate Movies</button>
+
+<form id="movieForm" class="mobile-form-hidden">
+    <span style="margin-right: 10px; font-size: 1.2em;">More Filters</span>
     <label class="toggle-switch">
         <input type="checkbox" id="toggle-advanced">
         <span class="slider"></span>
@@ -394,16 +400,59 @@ function showMessage(title, text, onOK, onCancel) {
 const toggleAdvanced = document.getElementById('toggle-advanced');
 const advancedOptions = document.getElementById('advanced-options');
 const closeDrawer = document.getElementById('close-drawer');
+const backdrop = document.getElementById('advanced-drawer-backdrop');
+
+function isMobile() {
+    return window.innerWidth <= 700;
+}
+
 toggleAdvanced.addEventListener('change', function() {
     if (this.checked) {
-        advancedOptions.style.left = '20px';
+        if (isMobile()) {
+            // Mobile: show as modal
+            advancedOptions.classList.add('mobile-modal');
+            backdrop.classList.add('active');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        } else {
+            // Desktop: slide in from left
+            advancedOptions.style.left = '20px';
+        }
     } else {
-        advancedOptions.style.left = '-300px';
+        closeAdvancedDrawer();
     }
 });
+
 closeDrawer.addEventListener('click', function() {
+    closeAdvancedDrawer();
+});
+
+// Backdrop is only visual, not interactive - modal can only be closed via X button or toggle
+
+// Prevent backdrop click when clicking inside modal
+advancedOptions.addEventListener('click', function(event) {
+    event.stopPropagation();
+});
+
+function closeAdvancedDrawer() {
     toggleAdvanced.checked = false;
-    advancedOptions.style.left = '-300px';
+    if (isMobile()) {
+        // Mobile: hide modal
+        advancedOptions.classList.remove('mobile-modal');
+        backdrop.classList.remove('active');
+        document.body.style.overflow = ''; // Restore scrolling
+    } else {
+        // Desktop: slide out
+        advancedOptions.style.left = '-390px';
+    }
+}
+
+// Close drawer when clicking outside (mobile modal)
+window.addEventListener('click', function(event) {
+    if (isMobile() && advancedOptions.classList.contains('mobile-modal')) {
+        if (event.target === advancedOptions) {
+            closeAdvancedDrawer();
+        }
+    }
 });
 
 // Search functionality
@@ -1055,6 +1104,22 @@ window.addEventListener('click', function(event) {
     if (event.target == modal) {
         modal.style.display = 'none';
         document.getElementById('listName').value = '';
+    }
+});
+
+// Mobile Generate Movies Button Functionality
+const generateMoviesBtn = document.getElementById('generateMoviesBtn');
+const movieForm = document.getElementById('movieForm');
+
+generateMoviesBtn.addEventListener('click', function() {
+    movieForm.classList.toggle('mobile-form-hidden');
+    movieForm.classList.toggle('mobile-form-visible');
+
+    // Update button text based on form state
+    if (movieForm.classList.contains('mobile-form-visible')) {
+        this.textContent = '🎬 Hide Form';
+    } else {
+        this.textContent = '🎬 Generate Movies';
     }
 });
 

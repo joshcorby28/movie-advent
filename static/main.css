@@ -364,11 +364,13 @@ input:checked + .slider:before {
 /* Advanced drawer */
 .advanced-drawer {
     position: fixed;
-    top: 20px;
+    top: 80px; /* Below header */
     left: -390px;
     width: 280px;
+    max-width: 90vw;
     height: auto;
-    background: rgba(0, 0, 0, 0.9);
+    max-height: calc(100vh - 100px);
+    background: rgba(0, 0, 0, 0.95);
     border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 10px;
     padding: 20px;
@@ -378,6 +380,7 @@ input:checked + .slider:before {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    overflow-y: auto;
 }
 
 .drawer-header {
@@ -603,6 +606,129 @@ input:checked + .slider:before {
     #movieModal .movie-poster-container {
         max-width: 250px;
         margin: 0 auto;
+    }
+}
+
+/* Mobile Generate Movies Button */
+.mobile-generate-btn {
+    background: linear-gradient(135deg, #1b1b1b, #3c3c3c);
+    color: #fff;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: 500;
+    font-family: 'Montserrat', sans-serif;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+    margin: 20px auto;
+    display: block;
+    min-width: 200px;
+}
+
+.mobile-generate-btn:hover {
+    background: linear-gradient(135deg, #3c3c3c, #1b1b1b);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.mobile-form-hidden {
+    /* Only hide on mobile - desktop shows form normally */
+}
+
+.mobile-form-visible {
+    display: flex !important;
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+}
+
+/* Advanced drawer mobile modal backdrop - Only visual, not interactive */
+.advanced-drawer-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 1999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    pointer-events: none; /* Allow clicks to pass through */
+}
+
+.advanced-drawer-backdrop.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.advanced-drawer.mobile-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90vw;
+    max-width: 400px;
+    height: auto;
+    max-height: 80vh;
+    border-radius: 15px;
+    z-index: 2001; /* Higher than backdrop */
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    cursor: default; /* Allow clicking inside modal */
+}
+
+/* Mobile responsiveness for generate button and form */
+@media (max-width: 700px) {
+    .mobile-generate-btn {
+        display: block !important;
+    }
+
+    .mobile-form-hidden {
+        display: none !important;
+        opacity: 0;
+        transform: translateY(-20px);
+        transition: all 0.3s ease;
+    }
+
+    .mobile-form-visible {
+        display: flex !important;
+        opacity: 1 !important;
+        transform: translateY(0) !important;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    /* Advanced drawer mobile styles */
+    .advanced-drawer {
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        width: 90vw !important;
+        max-width: 400px !important;
+        height: auto !important;
+        max-height: 80vh !important;
+        border-radius: 15px !important;
+        z-index: 2000 !important;
+        background: rgba(0, 0, 0, 0.95) !important;
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
+        padding: 20px !important;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8) !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        transition: all 0.3s ease !important;
+        overflow-y: auto !important;
+    }
+
+    .advanced-drawer.mobile-modal {
+        opacity: 1 !important;
+        visibility: visible !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
     }
 }
 
