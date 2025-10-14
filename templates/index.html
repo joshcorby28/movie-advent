@@ -30,11 +30,13 @@
 <button id="generateMoviesBtn" class="mobile-generate-btn" style="display: none;">🎬 Generate Movies</button>
 
 <form id="movieForm" class="mobile-form-hidden">
-    <span style="margin-right: 10px; font-size: 1.2em;">More Filters</span>
-    <label class="toggle-switch">
-        <input type="checkbox" id="toggle-advanced">
-        <span class="slider"></span>
-    </label>
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 1.2em;">More Filters</span>
+        <label class="toggle-switch">
+            <input type="checkbox" id="toggle-advanced">
+            <span class="slider"></span>
+        </label>
+    </div>
     <select name="month" id="monthSelect">
         <option value="">Select Month</option>
         <option value="January">January (31 days)</option>
